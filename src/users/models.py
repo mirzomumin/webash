@@ -1,5 +1,7 @@
-from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
+from uuid import UUID
+from datetime import datetime
+from sqlalchemy import String, ForeignKey, DateTime
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models import Base
 
@@ -23,5 +25,22 @@ class User(Base):
     can_connect_to_business: Mapped[bool | None]
     has_main_web_app: Mapped[bool | None]
 
+    # relatioinship
+    codes: Mapped[list["Code"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+
     def __str__(self) -> str:
         return self.tid
+
+
+class Code(Base):
+    __tablename__ = "codes"
+
+    value: Mapped[int]
+    expiry: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    is_used: Mapped[bool] = mapped_column(default=False)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+
+    # relatioinship
+    user: Mapped[User] = relationship(back_populates="codes")

@@ -23,3 +23,10 @@ class UserService:
         await db.commit()
         await db.refresh(new_user)
         return new_user
+
+    @classmethod
+    async def auth(
+        cls,
+        otp_code: int,
+    ):
+        pass

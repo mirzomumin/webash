@@ -2,9 +2,6 @@ import asyncio
 import logging
 import sys
 
-# Добавляем корневую директорию в sys.path
-# sys.path.append(os.path.dirname(os.path.abspath(os.path.join(__file__, "../.."))))
-
 from aiogram import Bot, Dispatcher, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -12,11 +9,9 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 
 from src.bot.command import CommandLogin
+from src.bot.service import BotService
 from src.config import settings
-from src.users.repository import UserRepository
-from src.users.service import AddUserSchema
-from src.utils import get_random_number
-from src.database import get_db
+from src.exceptions import ObjectAlreadyExists
 
 
 # Bot token can be obtained via https://t.me/BotFather
@@ -44,17 +39,19 @@ async def command_start_handler(message: Message) -> None:
 async def command_login_handler(message: Message) -> None:
     """
     This handler receives messages with `/login` command.
-    Send otp code in return.
+    Send auth code in return.
     """
-    rand_num = get_random_number()
-    async with get_db() as db:
-        user_data = await AddUserSchema.to_db(message.from_user)
-        user = await UserRepository.get(db=db, tid=user_data["tid"])
-        if user is None:
-            user = await UserRepository.add(db=db, values=user_data)
-            await db.commit()
-            await db.refresh(user)
-    await message.answer(f"🔐 Code: {html.code(rand_num)}")
+    try:
+        code = await BotService.get_auth_code(user=message.from_user)
+    except ObjectAlreadyExists:
+        await message.answer("Eski kodingiz hali ham kuchda ☝️")
+        return
+    except Exception as e:
+        logging.error(f"ERROR in get_auth_code: {e}")
+        await message.answer("Birozdan so'ng qayta urinib ko'ring ⏳")
+        return
+
+    await message.answer(f"🔐 Code: {html.code(code)}")
 
 
 @dp.message()

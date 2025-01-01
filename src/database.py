@@ -15,7 +15,7 @@ SessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=async_
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """
     Return db session within async generator.
-    Used only in fastapi project.
+    Used only in fastapi app.
     """
     async with SessionLocal() as session:
         yield session

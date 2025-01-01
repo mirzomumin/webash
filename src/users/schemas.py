@@ -1,7 +1,7 @@
-from aiogram.types.user import User  # import telegram User schema
+from aiogram.types.user import User as TelegramUser  # import telegram User schema
 
 
-class AddUserSchema(User):
+class AddUserSchema(TelegramUser):
     # tid: int
     # first_name: str | None
     # last_name: str | None
@@ -17,7 +17,7 @@ class AddUserSchema(User):
     # has_main_web_app: bool | None
 
     @classmethod
-    async def to_db(cls, data: User):
+    async def to_db(cls, data: TelegramUser):
         return {
             "tid": data.id,
             "first_name": data.first_name,

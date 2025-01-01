@@ -1,4 +1,4 @@
-from aiogram.types.user import User
+from aiogram.types.user import User  # import telegram User schema
 
 
 class AddUserSchema(User):

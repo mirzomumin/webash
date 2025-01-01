@@ -13,6 +13,8 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
       - ${DB_PORT}:5432
+    networks:
+      - webash_net
 
   # redis:
   #   image: redis:alpine
@@ -26,3 +28,7 @@ services:
 volumes:
   postgres_data:
   # redis_data:
+
+networks:
+  webash_net:
+    driver: bridge

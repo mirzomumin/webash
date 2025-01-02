@@ -1,4 +1,5 @@
 from sqlalchemy import insert, select, and_
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql._typing import _ColumnExpressionArgument
 from src.users.models import User, Code
@@ -22,6 +23,17 @@ class UserRepository:
         result = await db.execute(query)
         return result.scalar()
 
+    @classmethod
+    async def list(
+        cls,
+        *,
+        db: AsyncSession,
+        filters: list[_ColumnExpressionArgument[bool]] = [],
+    ) -> list[User]:
+        query = select(User).where(and_(*filters))
+        result = await db.execute(query)
+        return result.scalars().all()
+
 
 class CodeRepository:
     @classmethod
@@ -42,6 +54,6 @@ class CodeRepository:
         db: AsyncSession,
         filters: list[_ColumnExpressionArgument[bool]] = [],
     ) -> list[Code]:
-        query = select(Code).where(and_(*filters))
+        query = select(Code).where(and_(*filters)).options(selectinload(Code.user))
         result = await db.execute(query)
         return result.scalars().all()

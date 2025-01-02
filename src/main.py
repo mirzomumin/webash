@@ -3,14 +3,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from src.database import get_session
 
-# from src.categories.router import router as categories_router
+from src.users.router import router as user_router
 # from src.products.router import router as products_router
 
 
 app = FastAPI()
 
 
-# app.include_router(categories_router, prefix="/categories", tags=["categories"])
+app.include_router(user_router, prefix="/users", tags=["users"])
 # app.include_router(products_router, prefix="/products", tags=["products"])
 
 

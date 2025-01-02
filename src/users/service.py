@@ -3,11 +3,10 @@ import jwt
 from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import Depends, Body
-from fastapi.security import OAuth2PasswordBearer
 from src.database import get_session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.exceptions import (
+from src.base.exceptions import (
     CodeInvalidOrExpired,
     ObjectAlreadyExists,
     TokenExpired,
@@ -16,11 +15,7 @@ from src.exceptions import (
 from src.users.repository import UserRepository, CodeRepository
 from src.users.schemas import AddUserSchema, OtpData, RefreshToken
 from src.users.models import User, Code
-from src.config import settings
-from src.utils import get_token_details
-
-# OAuth2 scheme
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+from src.base.utils.token import JWTToken
 
 
 class UserService:
@@ -55,7 +50,8 @@ class AuthService:
         username: str | None = user.username
         user_id: UUID = user.id
 
-        token_details = get_token_details(
+        # Get token details
+        token_details = await JWTToken.get_token_details(
             payload={"sub": username, "user_id": str(user_id)}
         )
         return {"token": token_details}
@@ -68,44 +64,21 @@ class AuthService:
     ) -> dict:
         try:
             # Decode the refresh token
-            payload = jwt.decode(
-                refresh_token.refresh,
-                settings.SECRET_KEY,
-                algorithms=[settings.ALGORITHM],
+            payload = await JWTToken.get_payload(
+                token=refresh_token.refresh,
             )
 
             if payload.get("user_id") is None:
                 raise TokenInvalid
 
-            # Generate token details
-            token_details = get_token_details(payload=payload)
-            return {"token": token_details}
         except jwt.ExpiredSignatureError:
             raise TokenExpired
         except jwt.PyJWTError:
             raise TokenInvalid
 
-    @classmethod
-    async def verify(
-        cls,
-        *,
-        token: str = Depends(oauth2_scheme),
-        session: AsyncSession = Depends(get_session),
-    ) -> User:
-        try:
-            payload = jwt.decode(
-                token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-            )
-            user_id: UUID = payload.get("user_id")
-            if user_id is None:
-                raise TokenInvalid
-        except jwt.ExpiredSignatureError:
-            raise TokenExpired
-        except jwt.PyJWTError:
-            raise TokenInvalid
-
-        users = await UserRepository.list(db=session, filters=[User.id == user_id])
-        return users[0]
+        # Get token details
+        token_details = await JWTToken.get_token_details(payload=payload)
+        return {"token": token_details}
 
     @classmethod
     async def _verify_auth_code(cls, *, otp_code: int, session: AsyncSession) -> User:

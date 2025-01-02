@@ -1,4 +1,5 @@
 from aiogram.types.user import User as TelegramUser  # import telegram User schema
+from pydantic import BaseModel
 
 
 class AddUserSchema(TelegramUser):
@@ -36,3 +37,21 @@ class AddUserSchema(TelegramUser):
 
     class ConfigDict:
         from_attributes = True
+
+
+class TokenDetails(BaseModel):
+    access: str
+    refresh: str
+    type: str = "bearer"
+
+
+class Token(BaseModel):
+    token: TokenDetails
+
+
+class RefreshToken(BaseModel):
+    refresh: str
+
+
+class OtpData(BaseModel):
+    otp_code: int

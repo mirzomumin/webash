@@ -1,25 +1,96 @@
-from fastapi import Depends
+import jwt
+
+from datetime import datetime, timezone
+from uuid import UUID
+from fastapi import Depends, Body
 from src.database import get_session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.exceptions import ObjectAlreadyExists
-from src.users.repository import UserRepository
-from src.users.schemas import AddUserSchema
-from src.users.models import User
+from src.base.exceptions import (
+    CodeInvalidOrExpired,
+    ObjectAlreadyExists,
+    TokenExpired,
+    TokenInvalid,
+)
+from src.users.repository import UserRepository, CodeRepository
+from src.users.schemas import AddUserSchema, OtpData, RefreshToken
+from src.users.models import User, Code
+from src.base.utils.token import JWTToken
 
 
 class UserService:
     @classmethod
     async def add(
         cls,
+        *,
         user_schema: AddUserSchema,
-        db: AsyncSession = Depends(get_session),
+        session: AsyncSession = Depends(get_session),
     ) -> User:
         user_dict = user_schema.model_dump()
         try:
-            new_user = await UserRepository.add(db=db, values=user_dict)
+            new_user = await UserRepository.add(db=session, values=user_dict)
         except IntegrityError:
             raise ObjectAlreadyExists
-        await db.commit()
-        await db.refresh(new_user)
+        await session.commit()
+        await session.refresh(new_user)
         return new_user
+
+
+class AuthService:
+    @classmethod
+    async def token(
+        cls,
+        *,
+        otp_data: OtpData = Body(...),
+        session: AsyncSession = Depends(get_session),
+    ) -> dict:
+        user: User = await cls._verify_auth_code(
+            otp_code=otp_data.otp_code, session=session
+        )
+        username: str | None = user.username
+        user_id: UUID = user.id
+
+        # Get token details
+        token_details = await JWTToken.get_token_details(
+            payload={"sub": username, "user_id": str(user_id)}
+        )
+        return {"token": token_details}
+
+    @classmethod
+    async def refresh(
+        cls,
+        *,
+        refresh_token: RefreshToken = Body(...),
+    ) -> dict:
+        try:
+            # Decode the refresh token
+            payload = await JWTToken.get_payload(
+                token=refresh_token.refresh,
+            )
+
+            if payload.get("user_id") is None:
+                raise TokenInvalid
+
+        except jwt.ExpiredSignatureError:
+            raise TokenExpired
+        except jwt.PyJWTError:
+            raise TokenInvalid
+
+        # Get token details
+        token_details = await JWTToken.get_token_details(payload=payload)
+        return {"token": token_details}
+
+    @classmethod
+    async def _verify_auth_code(cls, *, otp_code: int, session: AsyncSession) -> User:
+        filters = [
+            Code.value == otp_code,
+            Code.expiry >= datetime.now(timezone.utc),
+            Code.is_used == False,  # noqa E712
+        ]
+        codes = await CodeRepository.list(db=session, filters=filters)
+
+        if len(codes) == 0:
+            raise CodeInvalidOrExpired
+
+        code = codes[0]
+        return code.user

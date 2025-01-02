@@ -1,7 +1,11 @@
-from aiogram.types.user import User
+from datetime import datetime
+from uuid import UUID
+
+from aiogram.types.user import User as TelegramUser  # import telegram User schema
+from pydantic import BaseModel
 
 
-class AddUserSchema(User):
+class AddUserSchema(TelegramUser):
     # tid: int
     # first_name: str | None
     # last_name: str | None
@@ -17,7 +21,7 @@ class AddUserSchema(User):
     # has_main_web_app: bool | None
 
     @classmethod
-    async def to_db(cls, data: User):
+    async def to_db(cls, data: TelegramUser):
         return {
             "tid": data.id,
             "first_name": data.first_name,
@@ -36,3 +40,35 @@ class AddUserSchema(User):
 
     class ConfigDict:
         from_attributes = True
+
+
+class UserSchema(BaseModel):
+    id: UUID
+    tid: int
+    first_name: str | None
+    last_name: str | None
+    username: str | None
+    is_bot: bool
+    created_at: datetime
+
+
+class GetUserSchema(BaseModel):
+    user: UserSchema
+
+
+class TokenDetails(BaseModel):
+    access: str
+    refresh: str
+    type: str = "bearer"
+
+
+class Token(BaseModel):
+    token: TokenDetails
+
+
+class RefreshToken(BaseModel):
+    refresh: str
+
+
+class OtpData(BaseModel):
+    otp_code: int

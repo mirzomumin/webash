@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends
 
-from src.users.schemas import Token
+from src.base.utils.auth import JWTAuthentication
+from src.users.models import User
+from src.users.schemas import Token, GetUserSchema
 from src.users.service import AuthService
 
 
@@ -19,3 +21,10 @@ async def refresh_token(
     token: Token = Depends(AuthService.refresh),
 ) -> Token:
     return token
+
+
+@router.get("/me")
+async def get_user(
+    user: User = Depends(JWTAuthentication.verify),
+) -> GetUserSchema:
+    return {"user": user}

@@ -1,6 +1,7 @@
 import jwt
 
 from uuid import UUID
+from typing import Annotated
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from src.database import get_session
@@ -23,7 +24,7 @@ class JWTAuthentication:
     async def verify(
         cls,
         *,
-        token: str = Depends(oauth2_scheme),
+        token: Annotated[str, Depends(oauth2_scheme)],
         session: AsyncSession = Depends(get_session),
     ) -> User:
         try:

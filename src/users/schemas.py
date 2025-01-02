@@ -1,3 +1,6 @@
+from datetime import datetime
+from uuid import UUID
+
 from aiogram.types.user import User as TelegramUser  # import telegram User schema
 from pydantic import BaseModel
 
@@ -37,6 +40,20 @@ class AddUserSchema(TelegramUser):
 
     class ConfigDict:
         from_attributes = True
+
+
+class UserSchema(BaseModel):
+    id: UUID
+    tid: int
+    first_name: str | None
+    last_name: str | None
+    username: str | None
+    is_bot: bool
+    created_at: datetime
+
+
+class GetUserSchema(BaseModel):
+    user: UserSchema
 
 
 class TokenDetails(BaseModel):

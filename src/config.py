@@ -9,8 +9,8 @@ class Settings:
     BOT_TOKEN: str = os.environ["BOT_TOKEN"]
     SECRET_KEY: str = os.environ["SECRET_KEY"]
     ALGORITHM: str = os.environ["ALGORITHM"]
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"])
-    REFRESH_TOKEN_EXPIRE_MINUTES: int = int(os.environ["REFRESH_TOKEN_EXPIRE_MINUTES"])
+    ACCESS_TOKEN_EXPIRE_SECONDS: int = int(os.environ["ACCESS_TOKEN_EXPIRE_SECONDS"])
+    REFRESH_TOKEN_EXPIRE_SECONDS: int = int(os.environ["REFRESH_TOKEN_EXPIRE_SECONDS"])
 
 
 settings = Settings()

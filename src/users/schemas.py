@@ -56,18 +56,20 @@ class GetUserSchema(BaseModel):
     user: UserSchema
 
 
-class TokenDetails(BaseModel):
+class AccessToken(BaseModel):
     access: str
-    refresh: str
-    type: str = "bearer"
-
-
-class Token(BaseModel):
-    token: TokenDetails
 
 
 class RefreshToken(BaseModel):
     refresh: str
+
+
+class Tokens(AccessToken, RefreshToken):
+    pass
+
+
+class TokensRsp(BaseModel):
+    tokens: Tokens
 
 
 class OtpData(BaseModel):

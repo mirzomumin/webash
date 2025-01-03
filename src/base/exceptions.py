@@ -46,7 +46,7 @@ class TokenInvalid(HTTPException):
     def __init__(
         self,
         status_code: int = status.HTTP_401_UNAUTHORIZED,
-        detail: Any = "Invalid token",
+        detail: Any = "Token Invalid",
         headers: Dict[str, str] | None = None,
     ) -> None:
         super().__init__(status_code, detail, headers)
@@ -56,7 +56,7 @@ class TokenExpired(HTTPException):
     def __init__(
         self,
         status_code: int = status.HTTP_401_UNAUTHORIZED,
-        detail: Any = "Expired token",
+        detail: Any = "Token Expired",
         headers: Dict[str, str] | None = None,
     ) -> None:
         super().__init__(status_code, detail, headers)

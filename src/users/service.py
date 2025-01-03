@@ -50,11 +50,10 @@ class AuthService:
         username: str | None = user.username
         user_id: UUID = user.id
 
-        # Get token details
-        token_details = await JWTToken.get_token_details(
-            payload={"sub": username, "user_id": str(user_id)}
-        )
-        return {"token": token_details}
+        # Get tokens
+        payload = {"sub": username, "user_id": str(user_id)}
+        tokens = JWTToken.tokens(payload=payload)
+        return {"tokens": tokens}
 
     @classmethod
     async def refresh(
@@ -64,7 +63,7 @@ class AuthService:
     ) -> dict:
         try:
             # Decode the refresh token
-            payload = await JWTToken.get_payload(
+            payload = await JWTToken.decode_jwt(
                 token=refresh_token.refresh,
             )
 
@@ -76,9 +75,9 @@ class AuthService:
         except jwt.PyJWTError:
             raise TokenInvalid
 
-        # Get token details
-        token_details = await JWTToken.get_token_details(payload=payload)
-        return {"token": token_details}
+        # Get tokens
+        tokens = JWTToken.tokens(payload=payload)
+        return {"token": tokens}
 
     @classmethod
     async def _verify_auth_code(cls, *, otp_code: int, session: AsyncSession) -> User:

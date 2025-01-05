@@ -3,7 +3,7 @@ import jwt
 from uuid import UUID
 from typing import Annotated
 from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer
 from src.database import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.base.exceptions import (
@@ -12,25 +12,19 @@ from src.base.exceptions import (
 )
 from src.users.repository import UserRepository
 from src.users.models import User
-from src.config import settings
+from src.base.utils.depends import get_token
+from src.base.utils.token import JWTToken
 
 
-# OAuth2 scheme
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-
-class JWTAuthentication:
-    @classmethod
-    async def verify(
-        cls,
+class JWTAuthentication(HTTPBearer):
+    async def __call__(
+        self,
         *,
-        token: Annotated[str, Depends(oauth2_scheme)],
+        token: Annotated[str, Depends(get_token)],
         session: AsyncSession = Depends(get_session),
     ) -> User:
         try:
-            payload = jwt.decode(
-                token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-            )
+            payload = JWTToken.decode_jwt(token=token)
             user_id: UUID = payload.get("user_id")
             if user_id is None:
                 raise TokenInvalid
@@ -41,3 +35,6 @@ class JWTAuthentication:
 
         users = await UserRepository.list(db=session, filters=[User.id == user_id])
         return users[0]
+
+
+jwt_authentication = JWTAuthentication()

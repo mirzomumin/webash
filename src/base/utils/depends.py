@@ -12,13 +12,14 @@ async def get_token(
     """Get authorization token"""
 
     if websocket:
-        authorization: str = websocket.headers.get("Authorization")
-        if not authorization or not authorization.startswith("Bearer "):
+        token = websocket.query_params.get("token")
+        if not token:
+            await websocket.close(code=1008)  # Policy Violation
             raise WebSocketException(
                 code=status.WS_1008_POLICY_VIOLATION,
                 reason="Not Authorized",
             )
-        return authorization.split("Bearer ")[1]
+        return token
 
     if request:
         return await oauth2_scheme(request)

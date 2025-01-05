@@ -1,6 +1,8 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from src.base.utils.ws import manager
 from src.base.utils.shell import run_shell_cmd
+from src.base.utils.auth import jwt_authentication
+from src.users.models import User
 
 router = APIRouter()
 
@@ -8,10 +10,9 @@ router = APIRouter()
 @router.websocket("/ws")
 async def websocket_endpoint(
     websocket: WebSocket,
-    # user: User = Depends(jwt_authentication),
+    user: User = Depends(jwt_authentication),
 ):
-    # client_id = user.id
-    client_id = 1
+    client_id = user.id
     await manager.connect(websocket)
     try:
         while True:

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web Terminal Example</title>
+    <meta charset="UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.min.js"></script>
+    <link
+        href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css"
+        rel="stylesheet"
+    />
+    <style type="text/css">
+        /* Ensure no margins and full height for HTML and body */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* Full-screen terminal container with scrolling */
+        #terminal {
+            height: 100%;
+            width: 100%;
+            background-color: black;
+            color: white;
+            overflow-y: auto;
+         }
+
+        .xterm-screen {
+            height: 100% !important;
+            width: 100% !important;
+        }
+
+        .xterm-viewport {
+            overflow-y: scroll !important;
+            height: 100% !important;
+        }
+
+        .terminal.xterm.xterm-dom-renderer-owner-1, .xterm-rows {
+            height: 100% !important;
+            width: 100% !important;
+        }
+
+        .xterm-rows {
+            z-index: 1000000000000000000;
+        }
+
+        .xterm-rows.xterm-focus, .terminal.xterm.xterm-dom-renderer-owner-1.focus {
+            height: 100% !important;
+            width: 100% !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal"></div>
+    <script>
+        // Function to fetch username from API
+        async function fetchTermPrompt(term) {
+
+            // ANSI color codes
+            const green = "\u001b[36m"; // Cyan text
+            const reset = "\u001b[0m";  // Reset color
+
+            // Define the prompt
+            let username = "anonymous"; // Default username for the prompt
+            const hostname = "webash";
+            const homePath = "~";
+
+            const jwtToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtaXJ6b211bWluIiwidXNlcl9pZCI6ImFhMjBlYjEzLWU1NjctNDFlNC1hZDhiLWQxYTVmMGExNWM5NyIsImV4cCI6MTczNjA4NTk2Mi40NDU2MjQ0fQ.0IkjHTqQ-_buyxXiNnpQN3fWmWDMB740TxaDE3-Ul60"; // Replace with your token
+
+            try {
+                const response = await fetch("http://127.0.0.1:8000/users/me", {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${jwtToken}`,
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    username = data.user.username || username; // Update username if present
+                    term.write(`\r\nFetched username: ${username}\r\n`);
+                    // Function to get the terminal prompt
+                    return `${green}${username}@${hostname}:${homePath}$ ${reset}`;
+                } else {
+                    term.write(`\r\nFailed to fetch username: ${response.statusText}\r\n`);
+                    return null; // Failure
+                }
+            } catch (error) {
+                term.write(`\r\nError fetching username: ${error.message}\r\n`);
+                return null; // Failure
+            }
+        }
+
+        // Main function to establish WebSocket connection after fetching username
+        async function initializeTerminal(term) {
+
+            const termPrompt = await fetchTermPrompt(term);
+
+            if (termPrompt == null) {
+                term.write("\r\nCannot establish WebSocket connection due to failed username fetch.\r\n");
+                return; // Exit if username fetch fails
+            }
+
+            // Proceed to establish WebSocket connection
+            const socket = new WebSocket("ws://127.0.0.1:8000/console/ws");
+            return { socket, termPrompt };
+        }
+        window.onload = async function () {
+            const term = new window.Terminal({
+                cursorBlink: true,
+                fontSize: 18,
+            });
+
+            term.open(document.getElementById("terminal"));
+
+            let commandBuffer = ""; // Buffer to store the user's input
+            let serverBuffer = 0; // Buffer for server response
+
+            const values = await initializeTerminal(term);
+            if (!values) {
+                return;
+            }
+            const { socket, termPrompt } = values;
+
+            // Function to show the prompt
+            const showPrompt = () => {
+                term.write(`\r\n${termPrompt}`);
+            };
+
+            term.onData(data => {
+                // Disable the up arrow key
+                if (data === '\u001B[A') {
+                    return; // Do nothing for up arrow key
+                }
+
+                if (data === '\r') { // Enter key
+                    socket.send(commandBuffer); // Send the command
+                    commandBuffer = ""; // Clear the buffer
+                } else if (data === '\u007F') { // Backspace key
+                    if (commandBuffer.length > 0) {
+                        commandBuffer = commandBuffer.slice(0, -1); // Remove last character
+                        term.write("\b \b"); // Handle backspace in the terminal
+                    }
+                } else {
+                    commandBuffer += data; // Add character to the buffer
+                    term.write(data); // Display the character in the terminal
+                }
+            });
+
+
+            socket.onopen = () => {
+                term.write("Connected to WebSocket server\r\n");
+                showPrompt(); // Show prompt after connection
+            };
+
+            socket.onmessage = event => {
+                // Append server response to the buffer
+
+                if (event.data === '/') {
+                    serverBuffer += 1;
+                } else {
+                    term.write(`\r\n${event.data}`);
+                }
+
+                if (serverBuffer >= 2) {
+                    showPrompt(); // Show the prompt
+                    serverBuffer = 0;
+                }
+            };
+
+            socket.onclose = () => {
+                term.write("\r\nWebSocket connection closed\r\n");
+            };
+
+            socket.onerror = error => {
+                term.write(`\r\nWebSocket error: ${error.message}\r\n`);
+            };
+        };
+    </script>
+</body>
+</html>
+
+
+
+<!--
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web Terminal Example</title>
+    <meta charset="UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.min.js"></script>
+    <link
+        href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css"
+        rel="stylesheet"
+    />
+    <style type="text/css">
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #terminal {
+            height: 100%;
+            width: 100%;
+            background-color: black;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal"></div>
+    <script>
+        window.onload = function () {
+            const term = new window.Terminal({
+                cursorBlink: true,
+                fontSize: 18,
+            });
+
+            term.open(document.getElementById("terminal"));
+
+            let commandBuffer = ""; // User input buffer
+            let username = "anonymous"; // Default username
+            const hostname = "webash";
+            const homePath = "~";
+
+            // ANSI color codes
+            const green = "\u001b[36m"; // Green text for prompt
+            const reset = "\u001b[0m";  // Reset text color
+
+            // Function to fetch username from API
+            async function fetchUsername() {
+                const jwtToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtaXJ6b211bWluIiwidXNlcl9pZCI6ImFhMjBlYjEzLWU1NjctNDFlNC1hZDhiLWQxYTVmMGExNWM5NyIsImV4cCI6MTczNjA3NTAyNi40NzM0Mjk0fQ.OZKCpgZXY5WVsW6EfRsocgRbFc0apK81iX01Ro-5WpY"; // Replace with your token
+
+                try {
+                    const response = await fetch("http://127.0.0.1:8000/users/me", {
+                        method: "GET",
+                        headers: {
+                            "Authorization": `Bearer ${jwtToken}`,
+                            "Content-Type": "application/json"
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        username = data.user?.username || username; // Update username if present
+                        term.write(`\r\nFetched username: ${username}\r\n`);
+                        return true; // Success
+                    } else {
+                        term.write(`\r\nFailed to fetch username: ${response.statusText}\r\n`);
+                        return false; // Failure
+                    }
+                } catch (error) {
+                    term.write(`\r\nError fetching username: ${error.message}\r\n`);
+                    return false; // Failure
+                }
+            }
+
+            // Function to get the terminal prompt
+            const getPrompt = () => `${green}${username}@${hostname}:${homePath}$ ${reset}`;
+
+            // Function to show the prompt
+            const showPrompt = () => {
+                term.write(`\r\n${getPrompt()}`);
+            };
+
+            // Handle terminal input
+            term.onData(data => {
+                if (data === "\u001B[A") {
+                    // Disable the up arrow key
+                    return;
+                }
+
+                if (data === "\r") { // Enter key
+                    if (commandBuffer.trim() === "") {
+                        showPrompt(); // Show prompt for empty commands
+                    } else {
+                        socket.send(commandBuffer); // Send command to server
+                        commandBuffer = ""; // Clear input buffer
+                    }
+                } else if (data === "\u007F") { // Backspace key
+                    if (commandBuffer.length > 0) {
+                        commandBuffer = commandBuffer.slice(0, -1); // Remove last character
+                        term.write("\b \b"); // Handle backspace
+                    }
+                } else {
+                    commandBuffer += data; // Add input to buffer
+                    term.write(data); // Display input on terminal
+                }
+            });
+
+            // Main function to establish WebSocket connection after fetching username
+            async function initializeTerminal() {
+                const isUsernameFetched = await fetchUsername();
+                if (!isUsernameFetched) {
+                    term.write("\r\nCannot establish WebSocket connection due to failed username fetch.\r\n");
+                    return; // Exit if username fetch fails
+                }
+
+                // Proceed to establish WebSocket connection
+                const socket = new WebSocket("ws://127.0.0.1:8000/console/ws");
+
+                socket.onopen = () => {
+                    term.write("Connected to WebSocket server\r\n");
+                    showPrompt(); // Show prompt after connection
+                };
+
+                socket.onmessage = event => {
+                    term.write(`\r\n${event.data}`); // Display server response
+                    showPrompt(); // Show prompt after server message
+                };
+
+                socket.onclose = () => {
+                    term.write("\r\nWebSocket connection closed\r\n");
+                };
+
+                socket.onerror = error => {
+                    term.write(`\r\nWebSocket error: ${error.message}\r\n`);
+                };
+            }
+
+            // Start the terminal initialization process
+            initializeTerminal();
+        };
+    </script>
+</body>
+</html> -->

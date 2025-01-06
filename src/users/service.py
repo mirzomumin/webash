@@ -63,7 +63,7 @@ class AuthService:
     ) -> dict:
         try:
             # Decode the refresh token
-            payload = await JWTToken.decode_jwt(
+            payload = JWTToken.decode_jwt(
                 token=refresh_token.refresh,
             )
 

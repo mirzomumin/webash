@@ -77,7 +77,7 @@ class AuthService:
 
         # Get tokens
         tokens = JWTToken.tokens(payload=payload)
-        return {"token": tokens}
+        return {"tokens": tokens}
 
     @classmethod
     async def _verify_auth_code(cls, *, otp_code: int, session: AsyncSession) -> User:

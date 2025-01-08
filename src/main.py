@@ -2,10 +2,9 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from src.database import get_session
+from src.core.database import get_session
 
-from src.users.router import router as user_router
-from src.console.router import router as console_router
+from src.api import router as router_api
 
 
 app = FastAPI()
@@ -22,8 +21,7 @@ app.add_middleware(
 )
 
 
-app.include_router(user_router, prefix="/users", tags=["users"])
-app.include_router(console_router, prefix="/console", tags=["console"])
+app.include_router(router_api)
 
 
 @app.get("/healthcheck")

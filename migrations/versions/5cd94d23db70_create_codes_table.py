@@ -1,8 +1,8 @@
 """create codes table
 
-Revision ID: dc3d77b5d04e
-Revises: 8106144a752e
-Create Date: 2025-01-01 23:07:33.629187
+Revision ID: 5cd94d23db70
+Revises: 45436f294ff3
+Create Date: 2025-01-09 00:09:52.786564
 
 """
 
@@ -13,8 +13,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "dc3d77b5d04e"
-down_revision: Union[str, None] = "8106144a752e"
+revision: str = "5cd94d23db70"
+down_revision: Union[str, None] = "45436f294ff3"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

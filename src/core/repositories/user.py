@@ -2,7 +2,7 @@ from sqlalchemy import insert, select, and_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql._typing import _ColumnExpressionArgument
-from src.users.models import User, Code
+from src.core.models.user import User, Code
 
 
 class UserRepository:

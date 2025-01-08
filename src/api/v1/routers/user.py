@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends
 
-from src.base.utils.auth import jwt_authentication
-from src.users.models import User
-from src.users.schemas import TokensRsp, GetUserSchema
-from src.users.service import AuthService
+from src.core.utils.auth import jwt_authentication
+from src.core.models.user import User
+from src.core.schemas.user import TokensRsp, GetUserSchema
+from src.api.v1.services.user import AuthService
 
 
-router = APIRouter()
+router = APIRouter(prefix="/user")
 
 
 @router.post("/token")

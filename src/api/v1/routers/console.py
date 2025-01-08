@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
-from src.base.utils.ws import manager
-from src.base.utils.shell import run_shell_cmd
-from src.base.utils.auth import jwt_authentication
-from src.users.models import User
+from src.core.utils.ws import manager
+from src.core.utils.shell import run_shell_cmd
+from src.core.utils.auth import jwt_authentication
+from src.core.models.user import User
 
-router = APIRouter()
+router = APIRouter(prefix="/console")
 
 
 @router.websocket("/ws")

@@ -1,7 +1,7 @@
 import jwt
 import time
 from src.config import settings
-from src.users.schemas import Tokens
+from src.core.schemas.user import Tokens
 
 
 class JWTToken:

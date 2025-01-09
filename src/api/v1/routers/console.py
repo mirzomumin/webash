@@ -2,17 +2,15 @@ from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from src.core.utils.ws import manager
 from src.core.utils.shell import run_shell_cmd
 from src.core.utils.auth import jwt_authentication
-from src.core.models.user import User
 
 router = APIRouter(prefix="/console")
 
 
-@router.websocket("/ws")
+@router.websocket("/ws", dependencies=[Depends(jwt_authentication)])
 async def websocket_endpoint(
     websocket: WebSocket,
-    user: User = Depends(jwt_authentication),
 ):
-    client_id = user.id
+    # client_id = user.id
     await manager.connect(websocket)
     try:
         while True:
@@ -24,4 +22,4 @@ async def websocket_endpoint(
             # await manager.broadcast(f"Client #{client_id} says: {data}")
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        await manager.broadcast(f"Client #{client_id} left the chat")
+        # await manager.broadcast(f"Client #{client_id} left the chat")

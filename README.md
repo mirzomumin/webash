@@ -7,23 +7,29 @@
 1. Launch main(fastapi) app
 
 ```shell
-fastapi dev ./src/main.py
+make app
 ```
 
 2. Launch bot app
 
 ```shell
-python3 -m src.bot.app
+make bot
 ```
 
-3. Make migration file
+3. Make database with docker
 
 ```shell
-alembic revision --autogenerate -m "migration message"
+make db
 ```
 
-4. Make database migration
+4. Make migration file
 
 ```shell
-alembic upgrade head
+make migration message="<migration message>"
+```
+
+5. Make database migration
+
+```shell
+make migrate
 ```

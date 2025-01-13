@@ -1,37 +1,50 @@
+"""Module to handle bash commands through subprocess"""
+
 import asyncio
-from fastapi import WebSocket, WebSocketDisconnect
+from uuid import UUID
+
+processes = {}
 
 
-async def read_stream(stream, websocket: WebSocket):
+async def create_process(client_id: UUID):
+    """Create a reusable subprocess."""
+    if client_id in processes:
+        return processes[client_id]
+
+    proc = await asyncio.create_subprocess_shell(
+        "/bin/bash",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+        cwd="/home/mirzomumin/",
+    )
+    processes[client_id] = proc
+    return proc
+
+
+def delete_process(client_id: UUID) -> None:
+    del processes[client_id]
+
+
+async def stream_output(stream, end_marker):
+    """Stream output from a given stream and yield it"""
     while True:
-        line: str = await stream.readline()
-        if not line:
+        line = await stream.readline()
+        if not line:  # End of the stream
             break
-        decoded_line = line.decode().rstrip()
-        await websocket.send_text(decoded_line)
-    await websocket.send_text("/")
+        line_decoded = line.decode().rstrip()
+        if end_marker in line_decoded:  # End marker found
+            break
+        yield line_decoded
+    yield "/"
 
 
-async def run_shell_cmd(cmd: str, websocket: WebSocket):
-    try:
-        proc = await asyncio.create_subprocess_shell(
-            cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-        )
+async def run_command(*, process, command):
+    """Send a command to the process and read its output."""
 
-        # Create tasks to read stdout and stderr concurrently
-        stdout_task = asyncio.create_task(read_stream(proc.stdout, websocket))
-        stderr_task = asyncio.create_task(read_stream(proc.stderr, websocket))
+    end_marker = "EOF"
+    process.stdin.write((f"{command}; echo {end_marker}\n").encode())
+    await process.stdin.drain()
 
-        # Wait for the subprocess to complete
-        await proc.wait()
-
-        # Ensure all output has been processed
-        await stdout_task
-        await stderr_task
-    except asyncio.CancelledError:
-        proc.terminate()
-        await proc.wait()
-
-    except WebSocketDisconnect:
-        proc.terminate()
-        await proc.wait()
+    async for stdout_line in stream_output(process.stdout, end_marker):
+        yield stdout_line

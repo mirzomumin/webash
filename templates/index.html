@@ -32,17 +32,13 @@
         }
 
         .xterm-viewport {
-            overflow-y: scroll !important;
+            overflow-y: auto !important;
             height: 100% !important;
         }
 
         .terminal.xterm.xterm-dom-renderer-owner-1, .xterm-rows {
             height: 100% !important;
             width: 100% !important;
-        }
-
-        .xterm-rows {
-            z-index: 1000000000000000000;
         }
 
         .xterm-rows.xterm-focus, .terminal.xterm.xterm-dom-renderer-owner-1.focus {
@@ -65,7 +61,30 @@
         const term = new window.Terminal({
             cursorBlink: true,
             fontSize: 18,
+            // rows: Math.floor(window.innerHeight / 21.5938),
+            cols: Math.floor(window.innerWidth / 10.81),
         });
+
+        const getHistoryIndex = () => {
+            const historyIndex = JSON.parse(localStorage.getItem("historyIndex"));
+            return historyIndex || -1;
+        };
+
+        // Utility to store command history
+        const getCommandHistory = () => {
+            const commandHistory = JSON.parse(localStorage.getItem("commandHistory"));
+            return commandHistory || [];
+        };
+
+        // Utility to set command history
+        const setCommandHistory = (commandHistory) => {
+            localStorage.setItem("commandHistory", JSON.stringify(commandHistory));
+        };
+
+        const setHistoryIndex = (commandHistory) => {
+            historyIndex = commandHistory.length; // Reset history index
+            localStorage.setItem("historyIndex", JSON.stringify(historyIndex));
+        };
 
         // Utility to get stored tokens from localStorage
         const getTokens = () => {
@@ -98,9 +117,11 @@
                             resolve(null);
                         }
                     } else if (data === '\u007F') { // Backspace key
-                        if (codeBuffer.length > 0) {
-                            codeBuffer = codeBuffer.slice(0, -1);
-                            term.write("\b \b");
+                        if (commandBuffer.length > 0) {
+                            commandBuffer = commandBuffer.slice(0, -1); // Remove last character
+                            term.write("\b \b"); // Handle backspace in the terminal
+                        } else {
+                            term.write(''); // Prevent deletion when buffer is empty
                         }
                     } else if (/^\d$/.test(data)) { // Только цифры
                         codeBuffer += data;
@@ -138,7 +159,7 @@
         // Function to refresh tokens
         async function refreshTokens(refreshToken) {
             try {
-                const response = await fetch(`${API_BASE}/user/token/refresh`, {
+                const response = await fetch(`${API_BASE}/user/token-refresh`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -270,9 +291,16 @@
             };
         }
 
-        window.onload = async function () {
+        let commandHistory = getCommandHistory()
+        let historyIndex = getHistoryIndex(); // Index to navigate the command history
 
-            term.open(document.getElementById("terminal"));
+        window.onload = async function () {
+            // Get the terminal container div
+            const terminalContainer = document.getElementById("terminal");
+
+            // Open terminal and fit dimensions
+            term.open(terminalContainer);
+            // term.open(document.getElementById("terminal"));
 
             const userDataResponse = await fetchUserData();
             if (!userDataResponse.success) {
@@ -300,13 +328,41 @@
             );
 
             term.onData(data => {
-                // Disable the up arrow key
-                if (data === '\u001B[A') {
-                    return; // Do nothing for up arrow key
+                if (data === '\u001B[A') { // Up arrow key
+                    if (commandHistory.length > 0) {
+                        // Navigate to the previous command in history
+                        historyIndex = Math.max(historyIndex - 1, 0);
+                        commandBuffer = commandHistory[historyIndex];
+
+                        // Clear the current command and reprint the prompt
+                        term.write(`\r\x1b[K${termPrompt}${commandBuffer}`);
+                    }
+                    return;
+                }
+
+                if (data === '\u001B[B') { // Down arrow key
+                    if (commandHistory.length > 0) {
+                        // Navigate to the next command in history or clear the buffer
+                        historyIndex = Math.min(historyIndex + 1, commandHistory.length);
+                        commandBuffer = historyIndex < commandHistory.length ? commandHistory[historyIndex] : "";
+
+                        // Clear the current command and reprint the prompt
+                        term.write(`\r\x1b[K${termPrompt}${commandBuffer}`);
+                    }
+                    return;
                 }
 
                 if (data === '\r') { // Enter key
                     socket.send(commandBuffer); // Send the command
+                    historyIndex = Math.max(historyIndex - 1, 0);
+                    prevCommand = commandHistory[historyIndex];
+                    if (commandBuffer === "" || prevCommand === commandBuffer) {
+                        commandBuffer = ""; // Clear the buffer
+                        return;
+                    };
+                    commandHistory.push(commandBuffer); // Add the command to history
+                    setCommandHistory(commandHistory)
+                    setHistoryIndex(commandHistory)
                     commandBuffer = ""; // Clear the buffer
                 } else if (data === '\u007F') { // Backspace key
                     if (commandBuffer.length > 0) {
@@ -334,7 +390,7 @@
                     term.write(`\r\n${event.data}`);
                 }
 
-                if (serverBuffer >= 2) {
+                if (serverBuffer >= 1) {
                     showPrompt(); // Show the prompt
                     serverBuffer = 0;
                 }
@@ -347,7 +403,46 @@
             socket.onerror = error => {
                 term.write(`\r\nWebSocket error: ${error.message}\r\n`);
             };
+
+        // Function to calculate and set terminal dimensions
+        function fitTerminal() {
+            const containerStyle = getComputedStyle(terminalContainer);
+            const containerWidth = parseFloat(containerStyle.width);
+            const containerHeight = parseFloat(containerStyle.height);
+
+            const row = document.querySelector('.xterm-rows > div')
+            const char = row.querySelector('span')
+
+            const charHeight = parseFloat(getComputedStyle(row).height)
+            const charWidth = parseFloat(getComputedStyle(char).width)
+
+            if (charWidth && charHeight) {
+                const cols = Math.floor(containerWidth / charWidth);
+                const rows = Math.floor(containerHeight / charHeight);
+
+                // Resize the terminal
+                term.resize(cols, rows);
+            }
+        }
+
+        const checkRendered = setInterval(() => {
+            if (
+                document.querySelector(".xterm-rows span")
+            ) {
+                clearInterval(checkRendered); // Останавливаем таймер
+                console.log("Терминал полностью загружен!");
+
+                fitTerminal()
+
+                // Resize observer to dynamically update terminal size
+                const resizeObserver = new ResizeObserver(() => {
+                    fitTerminal();
+                });
+                resizeObserver.observe(terminalContainer);
+            }
+            }, 50); // Проверяем каждые 50 мс
         };
+
     </script>
 </body>
 </html>

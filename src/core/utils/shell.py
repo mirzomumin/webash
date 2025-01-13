@@ -42,6 +42,10 @@ async def stream_output(stream, end_marker):
 async def run_command(*, process, command):
     """Send a command to the process and read its output."""
 
+    if not command.strip():
+        yield "/"
+        return
+
     end_marker = "EOF"
     process.stdin.write((f"{command}; echo {end_marker}\n").encode())
     await process.stdin.drain()

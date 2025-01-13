@@ -159,7 +159,7 @@
         // Function to refresh tokens
         async function refreshTokens(refreshToken) {
             try {
-                const response = await fetch(`${API_BASE}/user/token/refresh`, {
+                const response = await fetch(`${API_BASE}/user/token-refresh`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -390,7 +390,7 @@
                     term.write(`\r\n${event.data}`);
                 }
 
-                if (serverBuffer >= 2) {
+                if (serverBuffer >= 1) {
                     showPrompt(); // Show the prompt
                     serverBuffer = 0;
                 }

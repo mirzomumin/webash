@@ -16,7 +16,7 @@ async def make_token(
     return tokens
 
 
-@router.post("/token/refresh")
+@router.post("/token-refresh")
 async def refresh_token(
     tokens: TokensRsp = Depends(AuthService.refresh),
 ) -> TokensRsp:

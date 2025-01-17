@@ -498,34 +498,3 @@
     </script>
 </body>
 </html>
-
-
-<!-- <!DOCTYPE html>
-<html>
-  <head>
-    <title>Web Terminal Example</title>
-    <meta charset="UTF-8" />
-    <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.min.js"></script>
-    <link
-      href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css"
-      rel="stylesheet"
-    />
-    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-attach@0.8.0/lib/xterm-addon-attach.min.js"></script>
-    <script>
-      window.onload = function () {
-        const DOMAIN = "127.0.0.1:8000";
-        const term = new window.Terminal();
-        const socket = new WebSocket(
-          `ws://${DOMAIN}/api/v1/console/containers/103b57e7cec9/attach/ws`
-        );
-        const attachAddon = new AttachAddon.AttachAddon(socket);
-        term.open(document.getElementById("terminal"));
-        term.loadAddon(attachAddon);
-      };
-    </script>
-  </head>
-  <body>
-    <h2 style="text-align: center">Web Terminal Example</h2>
-    <div id="terminal"></div>
-  </body>
-</html> -->

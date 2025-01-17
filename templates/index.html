@@ -449,7 +449,8 @@
             const DOMAIN = "127.0.0.1:8000";
             const term = new window.Terminal();
             const socket = new WebSocket(
-            `ws://${DOMAIN}/api/v1/console/containers/103b57e7cec9/attach/ws`
+                `ws://${DOMAIN}/api/v1/console/ws`
+            // `ws://${DOMAIN}/api/v1/console/containers/103b57e7cec9/attach/ws`
             );
             const attachAddon = new AttachAddon.AttachAddon(socket);
             let terminalContainer = document.getElementById("terminal")

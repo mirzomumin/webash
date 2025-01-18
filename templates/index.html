@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Web Terminal Example</title>
+    <title>Webash</title>
     <meta charset="UTF-8" />
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.min.js"></script>
     <link
@@ -16,6 +16,8 @@
             padding: 0;
             height: 100%;
             overflow: hidden;
+            background-color: black;
+            padding: 2px;
         }
 
         /* Full-screen terminal container with scrolling */
@@ -55,40 +57,14 @@
         const DOMAIN = "127.0.0.1:8000";
         const API_BASE = `http://${DOMAIN}/api/v1`;
 
-        let commandBuffer = ""; // Buffer to store the user's input
-        let serverBuffer = 0; // Buffer for server response
-
         // Terminal
         const term = new window.Terminal({
             cursorBlink: true,
-            fontSize: 18,
-            // rows: Math.floor(window.innerHeight / 21.5938),
-            cols: Math.floor(window.innerWidth / 10.81),
+            fontSize: 16,
         });
 
-        const getHistoryIndex = () => {
-            const historyIndex = JSON.parse(localStorage.getItem("historyIndex"));
-            return historyIndex || -1;
-        };
-
-        // Utility to store command history
-        const getCommandHistory = () => {
-            const commandHistory = JSON.parse(localStorage.getItem("commandHistory"));
-            return commandHistory || [];
-        };
-
-        // Utility to set command history
-        const setCommandHistory = (commandHistory) => {
-            localStorage.setItem("commandHistory", JSON.stringify(commandHistory));
-        };
-
-        const setHistoryIndex = (commandHistory) => {
-            historyIndex = commandHistory.length; // Reset history index
-            localStorage.setItem("historyIndex", JSON.stringify(historyIndex));
-        };
-
         // Utility to get stored tokens from localStorage
-        const getTokens = () => {
+        const getLocalTokens = () => {
             const tokens = JSON.parse(localStorage.getItem('tokens'));
             return tokens || { access: null, refresh: null };
         };
@@ -103,58 +79,31 @@
             localStorage.removeItem('tokens');
         };
 
-        async function requestAuthCode() {
+        async function getInputCode(term) {
             return new Promise((resolve) => {
-                term.write("\r\nEnter your 6-digit auth code: ");
                 let codeBuffer = "";
 
                 const onDataHandler = term.onData((data) => {
                     if (data === '\r') { // Enter key
                         onDataHandler.dispose(); // Отменяем обработчик
                         if (/^\d{6}$/.test(codeBuffer)) {
-                            resolve(codeBuffer); // Возвращаем введенный код
+                            resolve(codeBuffer.trim()); // Возвращаем введенный код
                         } else {
-                            term.write("\r\nInvalid code. Please try again.\r\n");
                             resolve(null);
                         }
                     } else if (data === '\u007F') { // Backspace key
-                        if (commandBuffer.length > 0) {
-                            commandBuffer = commandBuffer.slice(0, -1); // Remove last character
+                        if (codeBuffer.length > 0) {
+                            codeBuffer = codeBuffer.slice(0, -1); // Remove last character
                             term.write("\b \b"); // Handle backspace in the terminal
                         } else {
                             term.write(''); // Prevent deletion when buffer is empty
                         }
-                    } else if (/^\d$/.test(data)) { // Только цифры
+                    } else if (/^\d$/.test(data) && codeBuffer.length < 6) {
                         codeBuffer += data;
                         term.write(data);
                     }
                 });
             });
-        }
-
-        // Function to fetch user data
-        async function getUserData(accessToken) {
-            try {
-                const response = await fetch(`${API_BASE}/user/me`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        "Content-Type": "application/json",
-                    }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    return { success: true, data: data.user };
-                } else if (response.status === 401) {
-                    return { success: false, error: 'Unauthorized' };
-                } else {
-                    const error = await response.text();
-                    return { success: false, error };
-                }
-            } catch (error) {
-                return { success: false, error: error.message };
-            }
         }
 
         // Function to refresh tokens
@@ -181,15 +130,15 @@
             }
         }
 
-        // Function to get tokens using OTP
-        async function getTokensWithOTP(otp) {
+        // Function to get tokens using code
+        async function getTokensWithCode(code) {
             try {
                 const response = await fetch(`${API_BASE}/user/token`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ otp_code: otp })
+                    body: JSON.stringify({ otp_code: code })
                 });
 
                 if (response.ok) {
@@ -206,255 +155,50 @@
             }
         }
 
-        // Main function to fetch user data, refresh tokens, or request OTP
-        async function fetchUserData() {
-            const { access, refresh } = getTokens();
-
-            // Проверяем наличие токенов
-            if (!access && !refresh) {
-                let authSuccess = false;
-
-                while (!authSuccess) {
-                    const authCode = await requestAuthCode();
-                    if (!authCode) {
-                        term.write("\r\nAuthorization cancelled. Try again anytime by entering the code.\r\n");
-                        continue
-                        // return { success: false, error: "Authorization cancelled." };
-                    }
-
-                    const tokenResponse = await getTokensWithOTP(authCode);
-                    if (tokenResponse.success) {
-                        authSuccess = true;
-                    } else {
-                        term.write(`\r\nAuthorization failed: ${tokenResponse.error}. Try again.\r\n`);
-                        continue
-                    }
+        async function getTokens(term) {
+            term.write('Salom!👋  @WeBashBot telegram bot orqali parol kodni oling.');
+            let response = null
+            while (true) {
+                term.write('\r\nParol kodni kiriting (olti xonalik son): ');
+                let code = await getInputCode(term);
+                if (!code) {
+                    continue
                 }
-
-                // After successful authorization, continue to get user data
-                return await fetchUserData();
-            }
-
-            // Try to fetch user data with the access token
-            const userDataResponse = await getUserData(access);
-
-            if (userDataResponse.success) {
-                return { success: true, data: userDataResponse.data };
-            } else if (userDataResponse.error === 'Unauthorized' && refresh) {
-                // If unauthorized, try to refresh tokens
-                const refreshResponse = await refreshTokens(refresh);
-
-                if (refreshResponse.success) {
-                    // Retry fetching user data with new access token
-                    const newUserDataResponse = await getUserData(refreshResponse.tokens.access);
-                    if (newUserDataResponse.success) {
-                        return { success: true, data: newUserDataResponse.data };
-                    } else {
-                        return {
-                            success: false,
-                            error: "You're not authorized. Go to @WeBash telegram bot to get auth code.\r\n"
-                        };
-                    }
-                } else {
-                    // Refresh failed, clear tokens and request OTP
-                    clearTokens();
-                    return {
-                        success: false,
-                        error: "You're not authorized. Go to @WeBash telegram bot to get auth code.\r\n"
-                    };
-                }
-            } else {
-                return { success: false, error: userDataResponse.error };
-            }
-        }
-
-        // Get term Prompt
-        async function fetchTermPrompt(term) {
-            // get user data
-            let userDataResponse = await fetchUserData()
-            if (!userDataResponse.success) {
-                return { success: false, error: userDataResponse.error };
-            }
-
-            const userData = userDataResponse.data
-            // ANSI color codes
-            const green = "\u001b[36m"; // Cyan text
-            const reset = "\u001b[0m";  // Reset color
-
-            // Define the prompt
-            let username = userData.username;
-            const hostname = "webash";
-            const homePath = "~";
-
-            return {
-                success: true,
-                data: `${green}${username}@${hostname}:${homePath}$ ${reset}`
+                response = await getTokensWithCode(code);
+                if (!response.success) {
+                    continue;
+                };
+                break;
             };
-        }
+            return response.tokens;
+        };
 
-        let commandHistory = getCommandHistory()
-        let historyIndex = getHistoryIndex(); // Index to navigate the command history -->
+        async function getAccessToken(term) {
+            let { access, refresh } = getLocalTokens();
+            if (!refresh) {
+                let tokens = await getTokens(term);
+                return tokens.access;
+            }
 
-        // window.onload = async function () {
-            // Get the terminal container div
-        //     const terminalContainer = document.getElementById("terminal");
+            let responseTokensData = await refreshTokens(refresh);
+            if (responseTokensData.success) {
+                access = responseTokensData.tokens.access;
+                return access;
+            };
 
-        //     // Open terminal and fit dimensions
-        //     term.open(terminalContainer);
-        //     // term.open(document.getElementById("terminal"));
+            let tokens = await getTokens(term);
+        };
 
-        //     const userDataResponse = await fetchUserData();
-        //     if (!userDataResponse.success) {
-        //         term.write(`\r\nAuthorization error: ${userDataResponse.error}\r\n`);
-        //         return;
-        //     }
+        window.onload = async function () {
 
-        //     const termPromptResponse = await fetchTermPrompt(term);
-        //     if (!termPromptResponse.success) {
-        //         term.write(`\r\nError fetching prompt: ${termPromptResponse.error}`);
-        //         return;
-        //     }
-
-        //     const termPrompt = termPromptResponse.data;
-
-        //     // Function to show the prompt
-        //     const showPrompt = () => {
-        //         term.write(`\r\n${termPrompt}`);
-        //     };
-
-        //     // Proceed to establish WebSocket connection
-        //     const { access, refresh } = getTokens();
-        //     const socket = new WebSocket(
-        //         `ws://${DOMAIN}/api/v1/console/ws?token=${access}`
-        //     );
-
-        //     term.onData(data => {
-        //         if (data === '\u001B[A') { // Up arrow key
-        //             if (commandHistory.length > 0) {
-        //                 // Navigate to the previous command in history
-        //                 historyIndex = Math.max(historyIndex - 1, 0);
-        //                 commandBuffer = commandHistory[historyIndex];
-
-        //                 // Clear the current command and reprint the prompt
-        //                 term.write(`\r\x1b[K${termPrompt}${commandBuffer}`);
-        //             }
-        //             return;
-        //         }
-
-        //         if (data === '\u001B[B') { // Down arrow key
-        //             if (commandHistory.length > 0) {
-        //                 // Navigate to the next command in history or clear the buffer
-        //                 historyIndex = Math.min(historyIndex + 1, commandHistory.length);
-        //                 commandBuffer = historyIndex < commandHistory.length ? commandHistory[historyIndex] : "";
-
-        //                 // Clear the current command and reprint the prompt
-        //                 term.write(`\r\x1b[K${termPrompt}${commandBuffer}`);
-        //             }
-        //             return;
-        //         }
-
-        //         if (data === '\r') { // Enter key
-        //             socket.send(commandBuffer); // Send the command
-        //             historyIndex = Math.max(historyIndex - 1, 0);
-        //             prevCommand = commandHistory[historyIndex];
-        //             if (commandBuffer === "" || prevCommand === commandBuffer) {
-        //                 commandBuffer = ""; // Clear the buffer
-        //                 return;
-        //             };
-        //             commandHistory.push(commandBuffer); // Add the command to history
-        //             setCommandHistory(commandHistory)
-        //             setHistoryIndex(commandHistory)
-        //             commandBuffer = ""; // Clear the buffer
-        //         } else if (data === '\u007F') { // Backspace key
-        //             if (commandBuffer.length > 0) {
-        //                 commandBuffer = commandBuffer.slice(0, -1); // Remove last character
-        //                 term.write("\b \b"); // Handle backspace in the terminal
-        //             }
-        //         } else {
-        //             commandBuffer += data; // Add character to the buffer
-        //             term.write(data); // Display the character in the terminal
-        //         }
-        //     });
-
-
-        //     socket.onopen = () => {
-        //         term.write("Connected to WebSocket server\r\n");
-        //         showPrompt(); // Show prompt after connection
-        //     };
-
-        //     socket.onmessage = event => {
-        //         // Append server response to the buffer
-
-        //         if (event.data === '/') {
-        //             serverBuffer += 1;
-        //         } else {
-        //             term.write(`\r\n${event.data}`);
-        //         }
-
-        //         if (serverBuffer >= 1) {
-        //             showPrompt(); // Show the prompt
-        //             serverBuffer = 0;
-        //         }
-        //     };
-
-        //     socket.onclose = () => {
-        //         term.write("\r\nWebSocket connection closed\r\n");
-        //     };
-
-        //     socket.onerror = error => {
-        //         term.write(`\r\nWebSocket error: ${error.message}\r\n`);
-        //     };
-
-        // // Function to calculate and set terminal dimensions
-        // function fitTerminal() {
-        //     const containerStyle = getComputedStyle(terminalContainer);
-        //     const containerWidth = parseFloat(containerStyle.width);
-        //     const containerHeight = parseFloat(containerStyle.height);
-
-        //     const row = document.querySelector('.xterm-rows > div')
-        //     const char = row.querySelector('span')
-
-        //     const charHeight = parseFloat(getComputedStyle(row).height)
-        //     const charWidth = parseFloat(getComputedStyle(char).width)
-
-        //     if (charWidth && charHeight) {
-        //         const cols = Math.floor(containerWidth / charWidth);
-        //         const rows = Math.floor(containerHeight / charHeight);
-
-        //         // Resize the terminal
-        //         term.resize(cols, rows);
-        //     }
-        // }
-
-        // const checkRendered = setInterval(() => {
-        //     if (
-        //         document.querySelector(".xterm-rows span")
-        //     ) {
-        //         clearInterval(checkRendered); // Останавливаем таймер
-        //         console.log("Терминал полностью загружен!");
-
-        //         fitTerminal()
-
-        //         // Resize observer to dynamically update terminal size
-        //         const resizeObserver = new ResizeObserver(() => {
-        //             fitTerminal();
-        //         });
-        //         resizeObserver.observe(terminalContainer);
-        //     }
-        //     }, 50); // Проверяем каждые 50 мс
-        // };
-
-
-        window.onload = function () {
-            const DOMAIN = "127.0.0.1:8000";
-            const term = new window.Terminal();
-            const socket = new WebSocket(
-                `ws://${DOMAIN}/api/v1/console/ws`
-            // `ws://${DOMAIN}/api/v1/console/containers/103b57e7cec9/attach/ws`
-            );
-            const attachAddon = new AttachAddon.AttachAddon(socket);
             let terminalContainer = document.getElementById("terminal")
             term.open(terminalContainer);
+
+            let access = await getAccessToken(term)
+            const socket = new WebSocket(
+                `ws://${DOMAIN}/api/v1/console/ws?token=${access}`
+            );
+            const attachAddon = new AttachAddon.AttachAddon(socket);
             term.loadAddon(attachAddon);
 
             // Function to calculate and set terminal dimensions

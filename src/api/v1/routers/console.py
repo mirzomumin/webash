@@ -1,34 +1,23 @@
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
-from src.core.models.user import User
+from docker import DockerClient
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from src.config import settings
 from src.core.utils.ws import manager
-from src.core.utils.shell import create_process, run_command, delete_process
-from src.core.utils.auth import jwt_authentication
+from src.core.utils.proxy import DockerWebSocketProxy
 
 router = APIRouter(prefix="/console")
+docker_client = DockerClient(base_url=f"unix://{settings.DOCKER_SOCKET_PATH}")
 
 
 @router.websocket("/ws")
 async def websocket_endpoint(
     websocket: WebSocket,
-    user: User = Depends(jwt_authentication),
+    # user: User = Depends(jwt_authentication),
 ):
-    client_id = user.id
     await manager.connect(websocket)
     try:
-        process = await create_process(client_id)
-        print(f"THIS IS PROCESS!!!: {process}")
-        while True:
-            cmd = await websocket.receive_text()
-            # Stream data to the client
-            async for data in run_command(process=process, command=cmd):
-                await websocket.send_text(data)
-            # await manager.send_personal_message(f"You wrote: {data}", websocket)
-            # await manager.broadcast(f"Client #{client_id} says: {data}")
+        # client_id = user.id
+        proxy = DockerWebSocketProxy(websocket, docker_client)
+        await proxy.handle_proxy()
+
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        # Properly close the process
-        process.stdin.write("exit\n".encode())
-        await process.stdin.drain()
-        await process.wait()
-        delete_process(client_id)
-        # await manager.broadcast(f"Client #{client_id} left the chat")

@@ -11,6 +11,7 @@ class Settings:
     ALGORITHM: str = os.environ["ALGORITHM"]
     ACCESS_TOKEN_EXPIRE_SECONDS: int = int(os.environ["ACCESS_TOKEN_EXPIRE_SECONDS"])
     REFRESH_TOKEN_EXPIRE_SECONDS: int = int(os.environ["REFRESH_TOKEN_EXPIRE_SECONDS"])
+    DOCKER_SOCKET_PATH: str = os.environ["DOCKER_SOCKET_PATH"]
 
 
 settings = Settings()

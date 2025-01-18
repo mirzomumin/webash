@@ -8,6 +8,7 @@
         href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css"
         rel="stylesheet"
     />
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-attach@0.8.0/lib/xterm-addon-attach.min.js"></script>
     <style type="text/css">
         /* Ensure no margins and full height for HTML and body */
         html, body {
@@ -292,155 +293,207 @@
         }
 
         let commandHistory = getCommandHistory()
-        let historyIndex = getHistoryIndex(); // Index to navigate the command history
+        let historyIndex = getHistoryIndex(); // Index to navigate the command history -->
 
-        window.onload = async function () {
+        // window.onload = async function () {
             // Get the terminal container div
-            const terminalContainer = document.getElementById("terminal");
+        //     const terminalContainer = document.getElementById("terminal");
 
-            // Open terminal and fit dimensions
-            term.open(terminalContainer);
-            // term.open(document.getElementById("terminal"));
+        //     // Open terminal and fit dimensions
+        //     term.open(terminalContainer);
+        //     // term.open(document.getElementById("terminal"));
 
-            const userDataResponse = await fetchUserData();
-            if (!userDataResponse.success) {
-                term.write(`\r\nAuthorization error: ${userDataResponse.error}\r\n`);
-                return;
-            }
+        //     const userDataResponse = await fetchUserData();
+        //     if (!userDataResponse.success) {
+        //         term.write(`\r\nAuthorization error: ${userDataResponse.error}\r\n`);
+        //         return;
+        //     }
 
-            const termPromptResponse = await fetchTermPrompt(term);
-            if (!termPromptResponse.success) {
-                term.write(`\r\nError fetching prompt: ${termPromptResponse.error}`);
-                return;
-            }
+        //     const termPromptResponse = await fetchTermPrompt(term);
+        //     if (!termPromptResponse.success) {
+        //         term.write(`\r\nError fetching prompt: ${termPromptResponse.error}`);
+        //         return;
+        //     }
 
-            const termPrompt = termPromptResponse.data;
+        //     const termPrompt = termPromptResponse.data;
 
-            // Function to show the prompt
-            const showPrompt = () => {
-                term.write(`\r\n${termPrompt}`);
-            };
+        //     // Function to show the prompt
+        //     const showPrompt = () => {
+        //         term.write(`\r\n${termPrompt}`);
+        //     };
 
-            // Proceed to establish WebSocket connection
-            const { access, refresh } = getTokens();
+        //     // Proceed to establish WebSocket connection
+        //     const { access, refresh } = getTokens();
+        //     const socket = new WebSocket(
+        //         `ws://${DOMAIN}/api/v1/console/ws?token=${access}`
+        //     );
+
+        //     term.onData(data => {
+        //         if (data === '\u001B[A') { // Up arrow key
+        //             if (commandHistory.length > 0) {
+        //                 // Navigate to the previous command in history
+        //                 historyIndex = Math.max(historyIndex - 1, 0);
+        //                 commandBuffer = commandHistory[historyIndex];
+
+        //                 // Clear the current command and reprint the prompt
+        //                 term.write(`\r\x1b[K${termPrompt}${commandBuffer}`);
+        //             }
+        //             return;
+        //         }
+
+        //         if (data === '\u001B[B') { // Down arrow key
+        //             if (commandHistory.length > 0) {
+        //                 // Navigate to the next command in history or clear the buffer
+        //                 historyIndex = Math.min(historyIndex + 1, commandHistory.length);
+        //                 commandBuffer = historyIndex < commandHistory.length ? commandHistory[historyIndex] : "";
+
+        //                 // Clear the current command and reprint the prompt
+        //                 term.write(`\r\x1b[K${termPrompt}${commandBuffer}`);
+        //             }
+        //             return;
+        //         }
+
+        //         if (data === '\r') { // Enter key
+        //             socket.send(commandBuffer); // Send the command
+        //             historyIndex = Math.max(historyIndex - 1, 0);
+        //             prevCommand = commandHistory[historyIndex];
+        //             if (commandBuffer === "" || prevCommand === commandBuffer) {
+        //                 commandBuffer = ""; // Clear the buffer
+        //                 return;
+        //             };
+        //             commandHistory.push(commandBuffer); // Add the command to history
+        //             setCommandHistory(commandHistory)
+        //             setHistoryIndex(commandHistory)
+        //             commandBuffer = ""; // Clear the buffer
+        //         } else if (data === '\u007F') { // Backspace key
+        //             if (commandBuffer.length > 0) {
+        //                 commandBuffer = commandBuffer.slice(0, -1); // Remove last character
+        //                 term.write("\b \b"); // Handle backspace in the terminal
+        //             }
+        //         } else {
+        //             commandBuffer += data; // Add character to the buffer
+        //             term.write(data); // Display the character in the terminal
+        //         }
+        //     });
+
+
+        //     socket.onopen = () => {
+        //         term.write("Connected to WebSocket server\r\n");
+        //         showPrompt(); // Show prompt after connection
+        //     };
+
+        //     socket.onmessage = event => {
+        //         // Append server response to the buffer
+
+        //         if (event.data === '/') {
+        //             serverBuffer += 1;
+        //         } else {
+        //             term.write(`\r\n${event.data}`);
+        //         }
+
+        //         if (serverBuffer >= 1) {
+        //             showPrompt(); // Show the prompt
+        //             serverBuffer = 0;
+        //         }
+        //     };
+
+        //     socket.onclose = () => {
+        //         term.write("\r\nWebSocket connection closed\r\n");
+        //     };
+
+        //     socket.onerror = error => {
+        //         term.write(`\r\nWebSocket error: ${error.message}\r\n`);
+        //     };
+
+        // // Function to calculate and set terminal dimensions
+        // function fitTerminal() {
+        //     const containerStyle = getComputedStyle(terminalContainer);
+        //     const containerWidth = parseFloat(containerStyle.width);
+        //     const containerHeight = parseFloat(containerStyle.height);
+
+        //     const row = document.querySelector('.xterm-rows > div')
+        //     const char = row.querySelector('span')
+
+        //     const charHeight = parseFloat(getComputedStyle(row).height)
+        //     const charWidth = parseFloat(getComputedStyle(char).width)
+
+        //     if (charWidth && charHeight) {
+        //         const cols = Math.floor(containerWidth / charWidth);
+        //         const rows = Math.floor(containerHeight / charHeight);
+
+        //         // Resize the terminal
+        //         term.resize(cols, rows);
+        //     }
+        // }
+
+        // const checkRendered = setInterval(() => {
+        //     if (
+        //         document.querySelector(".xterm-rows span")
+        //     ) {
+        //         clearInterval(checkRendered); // Останавливаем таймер
+        //         console.log("Терминал полностью загружен!");
+
+        //         fitTerminal()
+
+        //         // Resize observer to dynamically update terminal size
+        //         const resizeObserver = new ResizeObserver(() => {
+        //             fitTerminal();
+        //         });
+        //         resizeObserver.observe(terminalContainer);
+        //     }
+        //     }, 50); // Проверяем каждые 50 мс
+        // };
+
+
+        window.onload = function () {
+            const DOMAIN = "127.0.0.1:8000";
+            const term = new window.Terminal();
             const socket = new WebSocket(
-                `ws://${DOMAIN}/api/v1/console/ws?token=${access}`
+                `ws://${DOMAIN}/api/v1/console/ws`
+            // `ws://${DOMAIN}/api/v1/console/containers/103b57e7cec9/attach/ws`
             );
+            const attachAddon = new AttachAddon.AttachAddon(socket);
+            let terminalContainer = document.getElementById("terminal")
+            term.open(terminalContainer);
+            term.loadAddon(attachAddon);
 
-            term.onData(data => {
-                if (data === '\u001B[A') { // Up arrow key
-                    if (commandHistory.length > 0) {
-                        // Navigate to the previous command in history
-                        historyIndex = Math.max(historyIndex - 1, 0);
-                        commandBuffer = commandHistory[historyIndex];
+            // Function to calculate and set terminal dimensions
+            function fitTerminal() {
+                const containerStyle = getComputedStyle(terminalContainer);
+                const containerWidth = parseFloat(containerStyle.width);
+                const containerHeight = parseFloat(containerStyle.height);
 
-                        // Clear the current command and reprint the prompt
-                        term.write(`\r\x1b[K${termPrompt}${commandBuffer}`);
-                    }
-                    return;
+                const row = document.querySelector('.xterm-rows > div')
+                const char = row.querySelector('span')
+
+                const charHeight = parseFloat(getComputedStyle(row).height)
+                const charWidth = parseFloat(getComputedStyle(char).width)
+
+                if (charWidth && charHeight) {
+                    const cols = Math.floor(containerWidth / charWidth);
+                    const rows = Math.floor(containerHeight / charHeight);
+
+                    // Resize the terminal
+                    term.resize(cols, rows);
                 }
-
-                if (data === '\u001B[B') { // Down arrow key
-                    if (commandHistory.length > 0) {
-                        // Navigate to the next command in history or clear the buffer
-                        historyIndex = Math.min(historyIndex + 1, commandHistory.length);
-                        commandBuffer = historyIndex < commandHistory.length ? commandHistory[historyIndex] : "";
-
-                        // Clear the current command and reprint the prompt
-                        term.write(`\r\x1b[K${termPrompt}${commandBuffer}`);
-                    }
-                    return;
-                }
-
-                if (data === '\r') { // Enter key
-                    socket.send(commandBuffer); // Send the command
-                    historyIndex = Math.max(historyIndex - 1, 0);
-                    prevCommand = commandHistory[historyIndex];
-                    if (commandBuffer === "" || prevCommand === commandBuffer) {
-                        commandBuffer = ""; // Clear the buffer
-                        return;
-                    };
-                    commandHistory.push(commandBuffer); // Add the command to history
-                    setCommandHistory(commandHistory)
-                    setHistoryIndex(commandHistory)
-                    commandBuffer = ""; // Clear the buffer
-                } else if (data === '\u007F') { // Backspace key
-                    if (commandBuffer.length > 0) {
-                        commandBuffer = commandBuffer.slice(0, -1); // Remove last character
-                        term.write("\b \b"); // Handle backspace in the terminal
-                    }
-                } else {
-                    commandBuffer += data; // Add character to the buffer
-                    term.write(data); // Display the character in the terminal
-                }
-            });
-
-
-            socket.onopen = () => {
-                term.write("Connected to WebSocket server\r\n");
-                showPrompt(); // Show prompt after connection
-            };
-
-            socket.onmessage = event => {
-                // Append server response to the buffer
-
-                if (event.data === '/') {
-                    serverBuffer += 1;
-                } else {
-                    term.write(`\r\n${event.data}`);
-                }
-
-                if (serverBuffer >= 1) {
-                    showPrompt(); // Show the prompt
-                    serverBuffer = 0;
-                }
-            };
-
-            socket.onclose = () => {
-                term.write("\r\nWebSocket connection closed\r\n");
-            };
-
-            socket.onerror = error => {
-                term.write(`\r\nWebSocket error: ${error.message}\r\n`);
-            };
-
-        // Function to calculate and set terminal dimensions
-        function fitTerminal() {
-            const containerStyle = getComputedStyle(terminalContainer);
-            const containerWidth = parseFloat(containerStyle.width);
-            const containerHeight = parseFloat(containerStyle.height);
-
-            const row = document.querySelector('.xterm-rows > div')
-            const char = row.querySelector('span')
-
-            const charHeight = parseFloat(getComputedStyle(row).height)
-            const charWidth = parseFloat(getComputedStyle(char).width)
-
-            if (charWidth && charHeight) {
-                const cols = Math.floor(containerWidth / charWidth);
-                const rows = Math.floor(containerHeight / charHeight);
-
-                // Resize the terminal
-                term.resize(cols, rows);
             }
-        }
 
-        const checkRendered = setInterval(() => {
-            if (
-                document.querySelector(".xterm-rows span")
-            ) {
-                clearInterval(checkRendered); // Останавливаем таймер
-                console.log("Терминал полностью загружен!");
+            const checkRendered = setInterval(() => {
+                if (
+                    document.querySelector(".xterm-rows span")
+                ) {
+                    clearInterval(checkRendered); // Останавливаем таймер
+                    console.log("Терминал полностью загружен!");
 
-                fitTerminal()
+                    fitTerminal()
 
-                // Resize observer to dynamically update terminal size
-                const resizeObserver = new ResizeObserver(() => {
-                    fitTerminal();
-                });
-                resizeObserver.observe(terminalContainer);
-            }
-            }, 50); // Проверяем каждые 50 мс
+                    // Resize observer to dynamically update terminal size
+                    const resizeObserver = new ResizeObserver(() => {
+                        fitTerminal();
+                    });
+                    resizeObserver.observe(terminalContainer);
+                }
+                }, 50); // Проверяем каждые 50 мс
         };
 
     </script>

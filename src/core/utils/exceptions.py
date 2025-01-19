@@ -1,5 +1,6 @@
 from typing import Any, Dict
 from fastapi import HTTPException, status
+from docker.errors import ContainerError
 
 
 class ObjectNotFound(HTTPException):
@@ -57,6 +58,16 @@ class TokenExpired(HTTPException):
         self,
         status_code: int = status.HTTP_401_UNAUTHORIZED,
         detail: Any = "Token Expired",
+        headers: Dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(status_code, detail, headers)
+
+
+class ContainerUnavailable(HTTPException, ContainerError):
+    def __init__(
+        self,
+        status_code: int = status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail: Any = "Container Unavailable",
         headers: Dict[str, str] | None = None,
     ) -> None:
         super().__init__(status_code, detail, headers)

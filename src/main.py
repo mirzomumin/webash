@@ -1,13 +1,17 @@
+from logging.config import dictConfig
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from src.core.database import get_session
+from src.config import LogConfig
 
 from src.api import router as router_api
 
 
+dictConfig(LogConfig().model_dump())
 app = FastAPI()
+
 
 # Add CORS middleware
 app.add_middleware(

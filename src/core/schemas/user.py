@@ -73,4 +73,4 @@ class TokensRsp(BaseModel):
 
 
 class OtpData(BaseModel):
-    otp_code: int = Field(ge=100_000, le=999_999)
+    otp_code: int = Field(..., ge=100_000, le=999_999)

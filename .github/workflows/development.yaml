@@ -1,4 +1,4 @@
-name: Test
+name: Development
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
       - dev
 
 jobs:
-  test_code:
+  testing:
     runs-on: ubuntu-latest
 
     services:
@@ -67,3 +67,33 @@ jobs:
 
       - name: Run linters
         run: ruff check .
+
+  automerge:
+    needs: testing
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: automerge
+        uses: "pascalgn/automerge-action@v0.16.4"
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+  main_pr:
+    needs: [testing, automerge]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: main
+          head: dev
+          title: "Merge Dev into Main"
+          body: |
+            This pull request was automatically created by the GitHub Actions workflow.

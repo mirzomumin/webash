@@ -101,11 +101,18 @@ jobs:
   main_pr:
     needs: [testing, automerge]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+
       - name: Retrieve PR url
-        # Return pr url from dev branch
         run: |
-          echo "PR_URL=$(gh pr view dev --json url | grep -Po '(?<="url":")[^"\\]*(?:\\.[^"\\]*)*')" >> $GITHUB_ENV
+          echo "PR_URL=$(gh pr view dev --json url | grep -Po '(?<=\"url\":\")[^\"]*')" >> $GITHUB_ENV
 
       - name: Create PR if it does not exist
         run: |

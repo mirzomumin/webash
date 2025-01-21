@@ -42,7 +42,7 @@ jobs:
           poetry config virtualenvs.create false
 
       - name: Install dependencies with poetry
-        run: poetry install
+        run: poetry install --no-root
 
       - name: Run code tests
         run: pytest -s

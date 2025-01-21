@@ -98,8 +98,8 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          base: main
-          head: dev
+          base: dev
+          branch: main
           title: "Merge Dev into Main"
           body: |
             This pull request was automatically created by the GitHub Actions workflow.

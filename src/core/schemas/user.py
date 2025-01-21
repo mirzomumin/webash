@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from aiogram.types.user import User as TelegramUser  # import telegram User schema
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AddUserSchema(TelegramUser):
@@ -73,4 +73,4 @@ class TokensRsp(BaseModel):
 
 
 class OtpData(BaseModel):
-    otp_code: int
+    otp_code: int = Field(ge=100_000, le=999_999)

@@ -77,29 +77,36 @@ jobs:
       - name: Run linters
         run: ruff check .
 
+
   automerge:
     needs: testing
     runs-on: ubuntu-latest
     steps:
+      - name: Get Pull Request Number
+        run: echo "PR_NUMBER=$(gh pr view dev --json number -q .number || echo "")" >> $GITHUB_ENV
+
       - name: automerge
         uses: "pascalgn/automerge-action@v0.16.4"
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MERGE_LABELS: ""
+          MERGE_METHOD: "squash"
+          PULL_REQUEST: "${{ env.PR_NUMBER }}"
 
-  main_pr:
-    needs: [testing, automerge]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: dev
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: dev
-          branch: main
-          title: "Merge Dev into Main"
-          body: |
-            This pull request was automatically created by the GitHub Actions workflow.
+  # main_pr:
+  #   needs: [testing, automerge]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         ref: dev
+  #     - name: Create Pull Request
+  #       uses: peter-evans/create-pull-request@v5
+  #       with:
+  #         token: ${{ secrets.GITHUB_TOKEN }}
+  #         base: dev
+  #         branch: main
+  #         title: "Merge Dev into Main"
+  #         body: |
+  #           This pull request was automatically created by the GitHub Actions workflow.

@@ -1,0 +1,124 @@
+name: Development
+
+on:
+  pull_request:
+    branches:
+      - dev
+
+
+env:
+  GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+jobs:
+  testing:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_DB: ${{ secrets.TEST_DB_NAME }}
+
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up python3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependancy manager
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          export PATH="/home/runner/.local/bin"
+          poetry config virtualenvs.create false
+
+      - name: Install dependencies with poetry
+        run: poetry install --no-root
+
+      - name: Run code tests
+        env:
+          ACCESS_TOKEN_EXPIRE_SECONDS: ${{ secrets.ACCESS_TOKEN_EXPIRE_SECONDS }}
+          ALGORITHM: ${{ secrets.ALGORITHM }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DOCKER_SOCKET_PATH: ${{ secrets.DOCKER_SOCKET_PATH }}
+          REFRESH_TOKEN_EXPIRE_SECONDS: ${{ secrets.REFRESH_TOKEN_EXPIRE_SECONDS }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
+          TEST_DB_URL: ${{ secrets.TEST_DB_URL }}
+        run: pytest -s
+
+      - name: Install ruff linter
+        run: poetry add ruff
+
+      - name: Run linters
+        run: ruff check .
+
+
+  automerge:
+    needs: testing
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+
+    steps:
+      - name: Get Pull Request Number
+        run: echo "PR_NUMBER=$(gh pr view dev --json number -q .number || echo "")" >> $GITHUB_ENV
+
+      - name: automerge
+        uses: "pascalgn/automerge-action@v0.16.2"
+        env:
+          MERGE_LABELS: ""
+          PULL_REQUEST: "${{ env.PR_NUMBER }}"
+
+
+  main_pr:
+    needs: [testing, automerge]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Retrieve PR url
+        run: |
+          echo "PR_URL=$(gh pr view dev --json url | grep -Po '(?<=\"url\":\")[^\"]*')" >> $GITHUB_ENV
+
+      - name: Create PR if it does not exist
+        run: |
+          # Get PRs count
+          prs=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --head 'dev' \
+            --base 'main' \
+            --json title \
+            --jq 'length')
+
+          if ((prs == 0)); then
+            gh pr create -B main -H dev \
+            --title 'Merge dev into main' \
+            --body "${{ env.PR_URL }}"
+          fi

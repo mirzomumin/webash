@@ -98,48 +98,24 @@ jobs:
   main_pr:
     needs: [testing, automerge]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
-      - name: Checkout dev branch repository
-        uses: actions/checkout@v4
-        with:
-          ref: dev
+      - name: Retrieve PR url
+        # Return pr url from dev branch
+        run: |
+          echo "PR_URL=$(gh pr view dev --json url | grep -Po '(?<="url":")[^"\\]*(?:\\.[^"\\]*)*')" >> $GITHUB_ENV
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: main
-          branch: dev
-          title: "Merge Dev into Main"
-          body: "This is an automated pull request to update the main branch with changes from dev."
-          labels: |
-            automated
-            update
+      - name: Create PR if it does not exist
+        run: |
+          # Get PRs count
+          prs=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --head 'dev' \
+            --base 'main' \
+            --json title \
+            --jq 'length')
 
-  # main_pr:
-  #   needs: [testing, automerge]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Retrieve PR url
-  #       # Return pr url from dev branch
-  #       run: |
-  #         echo "PR_URL=$(gh pr view dev --json url | grep -Po '(?<="url":")[^"\\]*(?:\\.[^"\\]*)*')" >> $GITHUB_ENV
-
-  #     - name: Create PR if it does not exist
-  #       run: |
-  #         # Get PRs count
-  #         prs=$(gh pr list \
-  #           --repo "$GITHUB_REPOSITORY" \
-  #           --head 'dev' \
-  #           --base 'main' \
-  #           --json title \
-  #           --jq 'length')
-
-  #         if ((prs == 0)); then
-  #               gh pr create -B main -H dev \
-  #               --title 'Merge dev into main' \
-  #               --body "${{ env.PR_URL }}"
-  #         fi
+          if ((prs == 0)); then
+                gh pr create -B main -H dev \
+                --title 'Merge dev into main' \
+                --body "${{ env.PR_URL }}"
+          fi

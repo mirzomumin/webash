@@ -86,11 +86,9 @@ jobs:
         run: echo "PR_NUMBER=$(gh pr view dev --json number -q .number || echo "")" >> $GITHUB_ENV
 
       - name: automerge
-        uses: "pascalgn/automerge-action@v0.16.4"
+        uses: "pascalgn/automerge-action@v0.16.2"
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           MERGE_LABELS: ""
-          MERGE_METHOD: "squash"
           PULL_REQUEST: "${{ env.PR_NUMBER }}"
 
   # main_pr:

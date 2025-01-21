@@ -81,15 +81,15 @@ jobs:
   automerge:
     needs: testing
     runs-on: ubuntu-latest
+    permissions:
+          pull-requests: write
+          contents: write
     steps:
       - name: Get Pull Request Number
         run: echo "PR_NUMBER=$(gh pr view dev --json number -q .number || echo "")" >> $GITHUB_ENV
 
       - name: automerge
         uses: "pascalgn/automerge-action@v0.16.2"
-        permissions:
-          pull-requests: write
-          contents: write
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           MERGE_LABELS: ""

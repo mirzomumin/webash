@@ -18,7 +18,7 @@ class DockerWebSocketProxy:
         self.docker_socket = None
 
     async def connect_to_container(self):
-        """Connect to the specified Docker container."""
+        """Connect to the Docker container."""
         try:
             username = self.user.username or self.user.first_name or self.user.last_name
             home_dir = f"/home/{username}"
@@ -77,7 +77,6 @@ class DockerWebSocketProxy:
             raise
 
     async def read_from_socket(self):
-        """Read data from Docker socket and send it to WebSocket."""
         loop = asyncio.get_event_loop()
         while True:
             try:
@@ -90,7 +89,6 @@ class DockerWebSocketProxy:
                 raise
 
     async def write_to_socket(self):
-        """Read data from WebSocket and send it to Docker socket."""
         loop = asyncio.get_event_loop()
         while True:
             try:
@@ -101,17 +99,43 @@ class DockerWebSocketProxy:
                 logger.error(f"Error writing to Docker socket: {e}")
                 raise
 
+    async def monitor_container_state(self):
+        while True:
+            try:
+                if not self.is_container_running():
+                    logger.info("Container stopped or removed. Closing WebSocket.")
+                    await self.websocket.close(code=1001, reason="Container stopped")
+                    break
+                await asyncio.sleep(5)  # Check state every 5 seconds
+            except Exception as e:
+                logger.error(f"Error monitoring container state: {e}")
+                break
+
     async def handle_proxy(self):
         """Handle bidirectional communication between WebSocket and Docker socket."""
         try:
             await self.connect_to_container()
             self.attach_to_socket()
-            await asyncio.gather(self.read_from_socket(), self.write_to_socket())
+            await asyncio.gather(
+                self.read_from_socket(),
+                self.write_to_socket(),
+                self.monitor_container_state(),
+            )
         except Exception as e:
             logger.error(f"Exception: {e}")
             raise
         finally:
             self.cleanup()
+
+    def is_container_running(self) -> bool:
+        """Check if the container is running."""
+        try:
+            self.container.reload()  # Reload container attributes
+            state = self.container.attrs.get("State", {})
+            return state.get("Running", False)  # Return True if running
+        except errors.APIError as e:
+            logger.error(f"Error checking container state: {e}")
+            return False
 
     def cleanup(self):
         """Clean up resources."""

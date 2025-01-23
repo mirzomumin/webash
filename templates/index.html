@@ -200,8 +200,9 @@
 
             let terminalContainer = document.getElementById("terminal")
             term.open(terminalContainer);
+            term.focus();
 
-            let access = await getAccessToken(term)
+            let access = await getAccessToken(term);
 
             const isSecure = window.location.protocol === "https:";
             const protocol = isSecure ? "wss://" : "ws://";
@@ -217,6 +218,11 @@
             const ws = new WebSocket(`${protocol}${host}${path}?${params}`);
             const attachAddon = new AttachAddon.AttachAddon(ws);
             term.loadAddon(attachAddon);
+
+            ws.onclose = () => {
+                term.write('[Connection closed]');
+                term.setOption('cursorBlink', false);
+            }
 
             // Function to calculate and set terminal dimensions
             function fitTerminal() {

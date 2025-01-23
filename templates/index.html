@@ -16,18 +16,13 @@
             padding: 0;
             height: 100%;
             overflow: hidden;
-            background-color: black;
-            padding: 2px;
+            background: #0e1017;
         }
 
-        /* Full-screen terminal container with scrolling */
-        #terminal {
-            height: 100%;
-            width: 100%;
-            background-color: black;
-            color: white;
+        #terminal .terminal {
+            padding: 8px;
             overflow-y: auto;
-         }
+        }
 
         .xterm-screen {
             height: 100% !important;
@@ -61,7 +56,12 @@
         const term = new window.Terminal({
             cursorBlink: true,
             fontSize: 16,
+            rendererType: isMobile() ? 'dom' : 'canvas',
         });
+
+        if (!isMobile()) {
+            document.querySelector("#terminal").style.height = '100vh';
+        }
 
         // Utility to get stored tokens from localStorage
         const getLocalTokens = () => {
@@ -190,17 +190,32 @@
             return tokens.access;
         };
 
+        function isMobile() {
+            return /Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)|(tablet|ipad|playbook|silk)|(android(?!.*mobi))/.test(
+                navigator.userAgent
+            );
+        }
+
         window.onload = async function () {
 
             let terminalContainer = document.getElementById("terminal")
             term.open(terminalContainer);
 
             let access = await getAccessToken(term)
-            console.log(`access token: ${access}`)
-            const socket = new WebSocket(
-                `ws://${DOMAIN}/api/v1/console/ws?token=${access}`
-            );
-            const attachAddon = new AttachAddon.AttachAddon(socket);
+
+            const isSecure = window.location.protocol === "https:";
+            const protocol = isSecure ? "wss://" : "ws://";
+            var host = window.location.host;
+            const path = "/api/v1/console/ws";
+            const params = new URLSearchParams({
+                token: access,
+            });
+
+            if (!host) {
+                host = '127.0.0.1:8000'
+            }
+            const ws = new WebSocket(`${protocol}${host}${path}?${params}`);
+            const attachAddon = new AttachAddon.AttachAddon(ws);
             term.loadAddon(attachAddon);
 
             // Function to calculate and set terminal dimensions

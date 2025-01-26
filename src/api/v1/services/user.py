@@ -3,19 +3,24 @@ import jwt
 from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import Depends, Body
+
+from src.api.v1.schemas.user import (
+    AddUserSchema,
+    OtpData,
+    RefreshToken,
+)
 from src.core.database import get_session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.core.utils.exceptions import (
+from src.core.base.exceptions import (
     CodeInvalidOrExpired,
     ObjectAlreadyExists,
     TokenExpired,
     TokenInvalid,
 )
 from src.core.repositories.user import UserRepository, CodeRepository
-from src.core.schemas.user import AddUserSchema, OtpData, RefreshToken
 from src.core.models.user import User, Code
-from src.core.utils.token import JWTToken
+from src.core.base.token import JWTToken
 
 
 class UserService:

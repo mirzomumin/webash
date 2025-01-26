@@ -12,7 +12,7 @@ from httpx import AsyncClient, ASGITransport
 
 from src.main import app
 from src.core.database import get_session, get_db
-from src.core.utils.models import Base
+from src.core.base.models import Base
 from src.config import settings
 
 logger = logging.getLogger("webashapp")

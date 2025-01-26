@@ -2,7 +2,7 @@ from uuid import uuid4
 from datetime import datetime, timezone, timedelta
 from src.core.repositories.user import UserRepository, CodeRepository
 from src.core.models.user import User, Code
-from src.core.utils.funcs import get_random_number
+from src.core.base.funcs import get_random_number
 from tests.conftest import get_test_db
 
 

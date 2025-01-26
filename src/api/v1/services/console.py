@@ -13,48 +13,6 @@ docker_client = DockerClient(base_url=settings.DOCKER_SOCKET_PATH, max_pool_size
 logger = logging.getLogger("webashapp")
 
 
-# class ConsoleService:
-
-#     @classmethod
-#     async def run(cls, *, user: User, websocket: WebSocket):
-#         user_id = user.id
-#         prev_websocket = ws_manager.get_websocket(user_id=user_id)
-#         prev_container = container_manager.get_container(user_id=user_id)
-
-#         await ws_manager.connect(user_id=user_id, websocket=websocket)
-
-#         try:
-#             container: Container = await container_manager.create(
-#                 user=user,
-#                 docker_client=docker_client,
-#             )
-#             container_manager.add(user_id=user_id, container=container)
-
-
-#             proxy = DockerWebSocketProxy(
-#                 websocket=websocket,
-#                 container=container,
-#             )
-
-#             await proxy.handle_proxy()
-
-#         except WebSocketDisconnect:
-#             ws_manager.disconnect(user_id=user_id)
-
-#         except ContainerUnavailable:
-#             msg = "Terminal stopped. Reload the page.".encode()
-#             await websocket.send_bytes(msg)
-#             ws_manager.disconnect(user_id=user_id)
-#             await websocket.close()
-
-#         except Exception as e:
-#             logging.error(f'Unexpected exception: {e}')
-#             msg = "Unexpected error. Reload the page.".encode()
-#             await websocket.send_bytes(msg)
-#             ws_manager.disconnect(user_id=user_id)
-#             await websocket.close()
-
-
 class ConsoleService:
     @classmethod
     async def run(cls, *, user: User, websocket: WebSocket):

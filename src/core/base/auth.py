@@ -6,14 +6,14 @@ from fastapi import Depends
 from fastapi.security import HTTPBearer
 from src.core.database import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.core.utils.exceptions import (
+from src.core.base.exceptions import (
     TokenExpired,
     TokenInvalid,
 )
 from src.core.repositories.user import UserRepository
 from src.core.models.user import User
-from src.core.utils.dependencies import get_token
-from src.core.utils.token import JWTToken
+from src.core.base.dependencies import get_token
+from src.core.base.token import JWTToken
 
 
 class JWTAuthentication(HTTPBearer):

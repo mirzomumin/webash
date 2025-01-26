@@ -11,7 +11,7 @@ from aiogram.types import Message
 from src.bot.command import CommandLogin
 from src.bot.service import BotService
 from src.config import settings
-from src.core.utils.exceptions import ObjectAlreadyExists
+from src.core.base.exceptions import ObjectAlreadyExists
 
 
 # Bot token can be obtained via https://t.me/BotFather

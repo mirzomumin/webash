@@ -6,7 +6,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-from src.core.utils.models import Base
+from src.core.base.models import Base
 
 from src.core.models import *  # noqa: F403
 from src.config import settings

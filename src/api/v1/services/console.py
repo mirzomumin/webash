@@ -3,10 +3,10 @@ from docker import DockerClient
 from docker.models.containers import Container
 from fastapi import WebSocket, WebSocketDisconnect
 from src.config import settings
-from src.core.utils.exceptions import ContainerUnavailable
-from src.core.utils.ws import manager as ws_manager
-from src.core.utils.container import manager as container_manager
-from src.core.utils.proxy import DockerWebSocketProxy
+from src.core.base.exceptions import ContainerUnavailable
+from src.core.base.ws import manager as ws_manager
+from src.core.base.container import manager as container_manager
+from src.core.base.proxy import DockerWebSocketProxy
 from src.core.models.user import User
 
 docker_client = DockerClient(base_url=settings.DOCKER_SOCKET_PATH, max_pool_size=100)

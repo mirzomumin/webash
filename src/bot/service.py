@@ -2,11 +2,11 @@ from datetime import datetime, timedelta, timezone
 from aiogram.types.user import User as TelegramUser  # import telegram User schema
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.utils.exceptions import ObjectAlreadyExists
+from src.core.base.exceptions import ObjectAlreadyExists
 from src.core.models.user import Code
 from src.core.repositories.user import UserRepository, CodeRepository
-from src.core.schemas.user import AddUserSchema
-from src.core.utils.funcs import get_random_number
+from src.api.v1.schemas.user import AddUserSchema
+from src.core.base.funcs import get_random_number
 from src.core.database import get_db
 
 

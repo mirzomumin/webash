@@ -1,5 +1,5 @@
-import logging
 import asyncio
+import logging
 from fastapi import WebSocket
 from docker import errors
 from docker.models.containers import Container
@@ -70,7 +70,6 @@ class DockerWebSocketProxy:
     async def handle_proxy(self):
         """Handle bidirectional communication between WebSocket and Docker socket."""
         try:
-            # await self.connect_to_container()
             self.attach_to_socket()
             await asyncio.gather(
                 self.read_from_socket(),

@@ -1,6 +1,6 @@
 import pytest
 from tests.utils import create_user
-from src.core.utils.token import JWTToken
+from src.core.base.token import JWTToken
 
 
 @pytest.mark.asyncio(loop_scope="session")

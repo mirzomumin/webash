@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, WebSocket
-from src.core.utils.auth import jwt_authentication
+from src.core.base.auth import jwt_authentication
 from src.core.models.user import User
 from src.api.v1.services.console import ConsoleService
 

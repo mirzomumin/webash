@@ -211,6 +211,7 @@
             const params = new URLSearchParams({
                 token: access,
             });
+            console.log(host)
 
             if (!host) {
                 host = '127.0.0.1:8000'
@@ -221,7 +222,8 @@
 
             ws.onclose = () => {
                 term.write('[Connection closed]');
-                term.setOption('cursorBlink', false);
+                term.options.cursorBlink = false;
+                term.blur();
             }
 
             // Function to calculate and set terminal dimensions

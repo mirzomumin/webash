@@ -8,8 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    services:
-
     steps:
       # Checkout code
       - name: Checkout repository

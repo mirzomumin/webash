@@ -29,4 +29,8 @@ FROM base AS production
 
 WORKDIR /app
 
+# Copy dependencies from the builder stage
+COPY --from=builder /usr/local/lib/python3.*/site-packages /usr/local/lib/python3.*/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
 COPY . /app

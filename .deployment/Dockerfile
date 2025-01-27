@@ -13,7 +13,7 @@ RUN apt-get -y update \
 
 # Install and configure poetry
 RUN curl -sSL https://install.python-poetry.org | python3 -
-RUN export PATH="${PATH}:/root/.local/bin"
+ENV PATH="/root/.local/bin:$PATH"
 RUN poetry config virtualenvs.create false
 
 

@@ -32,7 +32,7 @@ services:
     networks:
       - webash_net
 
-  bot: &app
+  bot:
     <<: *app
     command: python3 -m src.bot.app
     ports:

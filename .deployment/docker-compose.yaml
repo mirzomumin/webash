@@ -58,7 +58,8 @@ services:
 
 
 networks:
-  webash_net
+  webash_net:
+    driver: bridge
 
 volumes:
   pg_data: {}

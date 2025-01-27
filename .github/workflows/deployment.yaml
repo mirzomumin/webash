@@ -27,7 +27,6 @@ jobs:
       - name: Build image
         run: |
           docker buildx build \
-          --platform linux/amd64,linux/arm64 \
           -t ${{ secrets.DCKR_REGISTRY }}/${{ secrets.DCKR_REPOSITORY }}:${{ env.IMG_TAG }} \
           -f .deployment/Dockerfile --push .
 

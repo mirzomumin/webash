@@ -37,6 +37,8 @@ services:
     <<: *app
     container_name: bot
     command: sh -c "python3 -m src.bot.app"
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - 7000:8000
 

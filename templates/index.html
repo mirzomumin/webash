@@ -49,8 +49,8 @@
     <div id="terminal"></div>
     <script>
 
-        const DOMAIN = "127.0.0.1:8000";
-        const API_BASE = `http://${DOMAIN}/api/v1`;
+        var host = window.location.host;
+        const API_BASE = `http://${host}/api/v1`;
 
         // Terminal
         const term = new window.Terminal({
@@ -206,7 +206,6 @@
 
             const isSecure = window.location.protocol === "https:";
             const protocol = isSecure ? "wss://" : "ws://";
-            var host = window.location.host;
             const path = "/api/v1/console/ws";
             const params = new URLSearchParams({
                 token: access,
@@ -214,7 +213,7 @@
             console.log(host)
 
             if (!host) {
-                host = '127.0.0.1:8000'
+                host = '0.0.0.0:8000'
             }
             const ws = new WebSocket(`${protocol}${host}${path}?${params}`);
             const attachAddon = new AttachAddon.AttachAddon(ws);

@@ -1,0 +1,76 @@
+name: Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    services:
+
+    steps:
+      # Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Make image tag as Last Commit Hash
+        run: echo "IMG_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      # Set up Docker
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DCKRHUB_USER }}
+          password: ${{ secrets.DCKRHUB_PASS }}
+
+      # Build and push image
+      - name: Build image
+        run: |
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          -t ${{ secrets.DCKR_REGISTRY }}/${{ secrets.DCKR_REPOSITORY }}:${{ env.IMG_TAG }} \
+          -f .deployment/Dockerfile --push .
+
+      - name: copy docker compose file into prod server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: ".deployment/docker-compose.yaml"
+          target: ./
+
+      # Deploy to the server
+      - name: SSH to server and deploy
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
+          DB_URL: ${{ secrets.DB_URL }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          ALGORITHM: ${{ secrets.ALGORITHM }}
+          ACCESS_TOKEN_EXPIRE_SECONDS: ${{ secrets.ACCESS_TOKEN_EXPIRE_SECONDS }}
+          REFRESH_TOKEN_EXPIRE_SECONDS: ${{ secrets.REFRESH_TOKEN_EXPIRE_SECONDS }}
+          DOCKER_SOCKET_PATH: ${{ secrets.DOCKER_SOCKET_PATH }}
+          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
+          TEST_DB_URL: ${{ secrets.TEST_DB_URL }}
+          DCKR_REGISTRY: ${{ secrets.DCKR_REGISTRY }}
+          DCKR_REPOSITORY: ${{ secrets.DCKR_REPOSITORY }}
+          IMG_TAG: ${{ env.IMG_TAG }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DB_NAME,DB_USER,DB_PASSWORD,DB_HOST,DB_PORT,REDIS_HOST,REDIS_PORT,DB_URL,BOT_TOKEN,SECRET_KEY,ALGORITHM,ACCESS_TOKEN_EXPIRE_SECONDS,REFRESH_TOKEN_EXPIRE_SECONDS,DOCKER_SOCKET_PATH,TEST_DB_NAME,TEST_DB_URL,DCKR_REGISTRY,DCKR_REPOSITORY,IMG_TAG
+          script: |
+            docker login -u ${{ secrets.DCKRHUB_USER }} -p ${{ secrets.DCKRHUB_PASS }}
+            docker pull $DCKR_REGISTRY/$DCKR_REPOSITORY:$IMG_TAG
+            docker-compose -f ./deployment/docker-compose.yaml up -d --build

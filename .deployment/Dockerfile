@@ -28,6 +28,5 @@ RUN poetry install --no-root
 FROM base AS production
 
 WORKDIR /app
-COPY --from=builder /app/.venv/ /app/.venv/
 
 COPY . /app

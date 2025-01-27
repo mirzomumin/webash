@@ -1,7 +1,8 @@
 services:
   app: &app
     image: ${DCKR_REGISTRY}/${DCKR_REPOSITORY}:${IMG_TAG}
-    command: alembic upgrade head && fastapi run ./src/main.py
+    container_name: app
+    command: sh -c "alembic upgrade head && fastapi run ./src/main.py"
     restart: on-failure
     environment:
       - DB_NAME=${DB_NAME}
@@ -34,11 +35,13 @@ services:
 
   bot:
     <<: *app
-    command: python3 -m src.bot.app
+    container_name: bot
+    command: sh -c "python3 -m src.bot.app"
     ports:
       - 7000:8000
 
   postgres:
+    container_name: postgres
     image: postgres:15-alpine
     environment:
       - POSTGRES_DB=${DB_NAME}

@@ -1,0 +1,64 @@
+services:
+  app: &app
+    image: ${DCKR_REGISTRY}/${DCKR_REPOSITORY}:${IMG_TAG}
+    command: alembic upgrade head && fastapi run ./src/main.py
+    restart: on-failure
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - DB_URL=${DB_URL}
+      - BOT_TOKEN=${BOT_TOKEN}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_SECONDS=${ACCESS_TOKEN_EXPIRE_SECONDS}
+      - REFRESH_TOKEN_EXPIRE_SECONDS=${REFRESH_TOKEN_EXPIRE_SECONDS}
+      - DOCKER_SOCKET_PATH=${DOCKER_SOCKET_PATH}
+      - TEST_DB_NAME=${TEST_DB_NAME}
+      - TEST_DB_URL=${TEST_DB_URL}
+    healthcheck:
+      test: python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthcheck/', timeout=5).code == 200"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - postgres
+    ports:
+      - 8000:8000
+    networks:
+      - webash_net
+
+  bot: &app
+    <<: *app
+    command: python3 -m src.bot.app
+    ports:
+      - 7000:8000
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "${DB_NAME}"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+    ports:
+      - 5432:5432
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - webash_net
+
+
+networks:
+  webash_net
+
+volumes:
+  pg_data: {}

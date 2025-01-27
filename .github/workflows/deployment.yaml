@@ -70,5 +70,6 @@ jobs:
           script: |
             docker login -u ${{ secrets.DCKRHUB_USER }} -p ${{ secrets.DCKRHUB_PASS }}
             docker pull $DCKR_REGISTRY/$DCKR_REPOSITORY:$IMG_TAG
+            docker compose -f ./.deployment/docker-compose.yaml down
             docker-compose -f ./.deployment/docker-compose.yaml up -d --build
             docker system prune -a -f

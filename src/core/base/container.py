@@ -17,7 +17,7 @@ class ContainerManager:
     def add(self, *, user_id: UUID, container: Container) -> None:
         self.containers[user_id] = container
 
-    async def create(self, *, user: User, docker_client: DockerClient):
+    def create(self, *, user: User, docker_client: DockerClient):
         """Create and run a Docker container."""
 
         try:

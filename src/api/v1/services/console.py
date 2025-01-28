@@ -22,7 +22,7 @@ class ConsoleService:
         await ws_manager.connect(user_id=user_id, websocket=websocket)
 
         try:
-            container: Container = await container_manager.create(
+            container: Container = container_manager.create(
                 user=user,
                 docker_client=docker_client,
             )

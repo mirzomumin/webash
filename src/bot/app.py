@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
-from aiogram.types import Message
+from aiogram.types import Message, BotCommand
 
 from src.bot.command import CommandLogin
 from src.bot.service import BotService
@@ -69,12 +69,26 @@ async def echo_handler(message: Message) -> None:
         await message.answer("Nice try!")
 
 
-async def main() -> None:
-    # Initialize Bot instance with default bot properties which will be passed to all API calls
-    bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+async def set_bot_commands(bot: Bot):
+    """
+    Function to set bot commands for `/help` menu and quick access.
+    """
+    commands = [
+        BotCommand(command="start", description="⬛️ Botni ishga tushiring"),
+        BotCommand(command="login", description="⬛️ Parol kodni oling"),
+    ]
+    await bot.set_my_commands(commands)
 
-    # And the run events dispatching
-    await dp.start_polling(bot)
+
+async def main() -> None:
+    async with Bot(
+        token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    ) as bot:
+        # Set bot commands
+        await set_bot_commands(bot)
+
+        # Start polling
+        await dp.start_polling(bot)
 
 
 if __name__ == "__main__":

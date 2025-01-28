@@ -1,6 +1,6 @@
 from uuid import UUID
 from datetime import datetime
-from sqlalchemy import String, ForeignKey, DateTime
+from sqlalchemy import String, ForeignKey, DateTime, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.base.models import Base
@@ -9,7 +9,7 @@ from src.core.base.models import Base
 class User(Base):
     __tablename__ = "users"
 
-    tid: Mapped[int] = mapped_column(unique=True, index=True)
+    tid: Mapped[int] = mapped_column(BigInteger, unique=True, index=True)
     first_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     last_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     username: Mapped[str | None] = mapped_column(

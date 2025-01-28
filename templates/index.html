@@ -49,8 +49,9 @@
     <div id="terminal"></div>
     <script>
 
+        const http_protocol = window.location.protocol;
         var host = window.location.host;
-        const API_BASE = `http://${host}/api/v1`;
+        const API_BASE = `${http_protocol}//${host}/api/v1`;
 
         // Terminal
         const term = new window.Terminal({

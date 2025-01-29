@@ -28,16 +28,14 @@ class ContainerManager:
             )
 
             container: Container = docker_client.containers.run(
-                image="alpine:latest",  # Specify the image
-                command="ash",  # Command to run in the container
-                stdin_open=True,  # Equivalent to `-i` (interactive)
-                tty=True,  # Equivalent to `-t` (allocate a pseudo-TTY)
-                detach=True,  # Equivalent to `-d` (run in detached mode)
-                environment={
-                    "PS1": colored_ps1  # Custom PS1 environment variable
-                },
+                image="alpine:latest",
+                command="sh",
+                stdin_open=True,
+                tty=True,
+                detach=True,
+                environment={"PS1": colored_ps1},
                 hostname="webash",
-                entrypoint=f"sh -c 'adduser -D {username} && su {username} -c ash'",
+                entrypoint=f"sh -c 'adduser -D {username} && su {username} -c sh'",
                 working_dir=home_dir,
                 healthcheck={
                     "test": ["CMD-SHELL", "getent hosts $(hostname) || exit 1"],

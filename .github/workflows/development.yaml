@@ -58,7 +58,8 @@ jobs:
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_URL: ${{ secrets.DB_URL }}
           DB_USER: ${{ secrets.DB_USER }}
-          DOCKER_SOCKET_PATH: ${{ secrets.DOCKER_SOCKET_PATH }}
+          DOCKER_WS_URL: ${{ secrets.DOCKER_WS_URL }}
+          DOCKER_API_URL: ${{ secrets.DOCKER_API_URL }}
           REFRESH_TOKEN_EXPIRE_SECONDS: ${{ secrets.REFRESH_TOKEN_EXPIRE_SECONDS }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}

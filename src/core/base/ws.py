@@ -24,19 +24,25 @@ class ConnectionManager:
 
         async with self.locks[user_id]:
             # Check for an existing connection
-            if user_id in self.active_connections:
-                old_websocket = self.active_connections[user_id]
-                if old_websocket.client_state == WebSocketState.CONNECTED:
-                    # Interrupt the previous connection
-                    await old_websocket.close(
-                        code=1008, reason="New connection established"
-                    )
-                    logger.info(f"Closed previous connection for user {user_id}")
+            if user_id not in self.active_connections:
+                # Accept the new WebSocket connection
+                await self._connect(user_id=user_id, websocket=websocket)
+                return
 
-            # Accept the new WebSocket connection
-            await websocket.accept()
-            self.active_connections[user_id] = websocket
-            logger.info(f"New connection {websocket} established for user {user_id}")
+            old_websocket = self.active_connections[user_id]
+            if old_websocket.client_state == WebSocketState.CONNECTED:
+                # Interrupt the previous connection
+                await old_websocket.close(
+                    code=1008, reason="New connection established"
+                )
+                logger.info(f"Closed previous connection for user {user_id}")
+
+            await self._connect(user_id=user_id, websocket=websocket)
+
+    async def _connect(self, *, user_id: UUID, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections[user_id] = websocket
+        logger.info(f"New connection {websocket} established for user {user_id}")
 
     def disconnect(self, *, user_id: UUID):
         ws = self.get_websocket(user_id=user_id)

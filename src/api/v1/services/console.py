@@ -17,7 +17,6 @@ class ConsoleService:
     @classmethod
     async def run(cls, *, user: User, websocket: WebSocket):
         user_id = user.id
-        await ws_manager.connect(user_id=user_id, websocket=websocket)
 
         try:
             container: Container = container_manager.create(
@@ -32,6 +31,7 @@ class ConsoleService:
             )
 
             # Handle the WebSocket connection
+            await ws_manager.connect(user_id=user_id, websocket=websocket)
             await proxy.handle_proxy()
 
         except WebSocketDisconnect:

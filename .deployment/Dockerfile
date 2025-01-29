@@ -49,6 +49,8 @@ COPY . /app
 FROM python:3.13.1-alpine
 
 WORKDIR /app
+
+# Copy installed dependencies from the builder stage
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /app /app
-COPY --from=builder /root/.local /root/.local
-ENV PATH="/root/.local/bin:$PATH"

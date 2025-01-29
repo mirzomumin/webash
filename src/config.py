@@ -12,7 +12,8 @@ class Settings:
     ALGORITHM: str = os.environ["ALGORITHM"]
     ACCESS_TOKEN_EXPIRE_SECONDS: int = int(os.environ["ACCESS_TOKEN_EXPIRE_SECONDS"])
     REFRESH_TOKEN_EXPIRE_SECONDS: int = int(os.environ["REFRESH_TOKEN_EXPIRE_SECONDS"])
-    DOCKER_SOCKET_PATH: str = os.environ["DOCKER_SOCKET_PATH"]
+    DOCKER_API_URL: str = os.environ["DOCKER_API_URL"]
+    DOCKER_WS_URL: str = os.environ["DOCKER_WS_URL"]
     TEST_DB_URL: str = os.environ["TEST_DB_URL"]
 
 

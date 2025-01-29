@@ -20,15 +20,15 @@ class DockerWebSocketProxy:
 
     async def handle_proxy(self):
         container_id = self.container.id
-        docker_ws_url = f"{DOCKER_WS_URL}/containers/{container_id}/attach/ws?stream=1&stdout=1&stdin=1&logs=1"
+        docker_ws_url = f"{DOCKER_WS_URL}/containers/{container_id}/attach/ws?stream=1&stdout=1&stdin=1&logs=1&stderr=1"
 
         try:
             # Connect to the Docker WebSocket
             async with websockets.connect(docker_ws_url) as docker_ws:
                 # Forward messages bidirectionally
                 await asyncio.gather(
-                    self._read_from_socket(docker_ws),  # Docker -> Client
                     self._write_to_socket(docker_ws),  # Client -> Docker
+                    self._read_from_socket(docker_ws),  # Docker -> Client
                 )
         except ConnectionClosedError:
             logger.error("WebSocket connection closed")

@@ -1,106 +1,65 @@
 import asyncio
 import logging
-from fastapi import WebSocket
-from docker import errors
+import websockets
+from fastapi import WebSocket, WebSocketDisconnect
 from docker.models.containers import Container
+from websockets.exceptions import ConnectionClosedError
+from websockets.asyncio.client import ClientConnection
+from src.config import settings
 
 
 logger = logging.getLogger("webashapp")
+DOCKER_WS_URL = settings.DOCKER_WS_URL  # Replace with your Docker API endpoint
+# DOCKER_API_URL = settings.DOCKER_SOCKET_PATH
 
 
 class DockerWebSocketProxy:
     def __init__(self, *, websocket: WebSocket, container: Container):
         self.websocket = websocket
         self.container = container
-        self.docker_socket = None
-
-    def attach_to_socket(self):
-        """Attach to the Docker container's socket."""
-        try:
-            self.docker_socket = self.container.attach_socket(
-                params={
-                    "stdout": 1,
-                    "stdin": 1,
-                    "logs": 1,
-                    "stream": 1,
-                },
-                ws=False,
-            )._sock
-
-        except errors.APIError as e:
-            logger.error(f"Failed to attach to container: {e}")
-            self.cleanup()
-            raise
-
-    async def read_from_socket(self):
-        loop = asyncio.get_event_loop()
-        while True:
-            try:
-                data = await loop.run_in_executor(None, self.docker_socket.recv, 4096)
-                if not data:
-                    break
-                await self.websocket.send_bytes(data)
-            except Exception as e:
-                logger.error(f"Error reading from Docker socket: {e}")
-                raise
-
-    async def write_to_socket(self):
-        loop = asyncio.get_event_loop()
-        while True:
-            try:
-                msg = await self.websocket.receive_text()
-                data = msg.encode()
-                await loop.run_in_executor(None, self.docker_socket.sendall, data)
-            except Exception as e:
-                logger.error(f"Error writing to Docker socket: {e}")
-                raise
-
-    async def monitor_container_state(self):
-        while True:
-            try:
-                if not self.is_container_running():
-                    logger.info("Container stopped or removed. Closing WebSocket.")
-                    await self.websocket.close(code=1001, reason="Container stopped")
-                    break
-                await asyncio.sleep(5)  # Check state every 5 seconds
-            except Exception as e:
-                logger.error(f"Error monitoring container state: {e}")
-                raise
 
     async def handle_proxy(self):
-        """Handle bidirectional communication between WebSocket and Docker socket."""
+        container_id = self.container.id
+        docker_ws_url = f"{DOCKER_WS_URL}/containers/{container_id}/attach/ws?stream=1&stdout=1&stdin=1&logs=1"
+
         try:
-            self.attach_to_socket()
-            await asyncio.gather(
-                self.read_from_socket(),
-                self.write_to_socket(),
-                self.monitor_container_state(),
-            )
+            # Connect to the Docker WebSocket
+            async with websockets.connect(docker_ws_url) as docker_ws:
+                # Forward messages bidirectionally
+                await asyncio.gather(
+                    self._read_from_socket(docker_ws),  # Docker -> Client
+                    self._write_to_socket(docker_ws),  # Client -> Docker
+                )
+        except ConnectionClosedError:
+            logger.error("WebSocket connection closed")
+            raise
         except Exception as e:
-            logger.error(f"Exception: {e}")
+            logger.error(f"Error: {e}")
             raise
         finally:
-            self.cleanup()
+            self.container.remove(force=True)
+            await self.websocket.close()
 
-    def is_container_running(self) -> bool:
-        """Check if the container is running."""
+    async def _write_to_socket(self, docker_ws: ClientConnection):
         try:
-            self.container.reload()  # Reload container attributes
-            state = self.container.attrs.get("State", {})
-            return state.get("Running", False)  # Return True if running
-        except errors.APIError as e:
-            logger.error(f"Error checking container state: {e}")
-            return False
+            while True:
+                msg = await self.websocket.receive_text()
+                await docker_ws.send(msg, text=False)
+        except (WebSocketDisconnect, ConnectionClosedError):
+            logger.error("Writing to docker socket stopped")
+            raise
+        except Exception as e:
+            logger.error(f"Writing to docker socket error: {e}")
+            raise
 
-    def cleanup(self):
-        """Clean up resources."""
-        if self.container:
-            try:
-                self.container.remove(force=True)
-                # for further release
-                # self.container.stop(timeout=0)
-                #
-            except errors.APIError as e:
-                logger.error(f"Error stopping container: {e}")
-        if self.docker_socket:
-            self.docker_socket.close()
+    async def _read_from_socket(self, docker_ws: ClientConnection):
+        try:
+            while True:
+                data = await docker_ws.recv()
+                await self.websocket.send_bytes(data)
+        except (WebSocketDisconnect, ConnectionClosedError):
+            logger.error("Reading from docker socket stopped")
+            raise
+        except Exception as e:
+            logger.error(f"Reading from docker socket error: {e}")
+            raise

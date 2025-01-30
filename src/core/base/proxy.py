@@ -3,7 +3,7 @@ import logging
 import websockets
 from fastapi import WebSocket, WebSocketDisconnect
 from docker.models.containers import Container
-from websockets.exceptions import ConnectionClosedError
+from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 from websockets.asyncio.client import ClientConnection
 from src.config import settings
 
@@ -56,8 +56,9 @@ class DockerWebSocketProxy:
         try:
             while True:
                 data = await docker_ws.recv()
+                logger.info(f'Data: "{data}" from container "{self.container.id}"')
                 await self.websocket.send_bytes(data)
-        except (WebSocketDisconnect, ConnectionClosedError):
+        except (WebSocketDisconnect, ConnectionClosedError, ConnectionClosedOK):
             logger.error("Reading from docker socket stopped")
             raise
         except Exception as e:

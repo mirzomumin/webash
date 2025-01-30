@@ -44,6 +44,7 @@ class DockerWebSocketProxy:
         try:
             while True:
                 msg = await self.websocket.receive_text()
+                logger.info(f'Msg: "{msg}" to container "{self.container.id}"')
                 await docker_ws.send(msg, text=False)
         except (WebSocketDisconnect, ConnectionClosedError):
             logger.error("Writing to docker socket stopped")

@@ -4,8 +4,8 @@ services:
     container_name: app
     command: sh -c "alembic upgrade head && fastapi run ./src/main.py"
     restart: on-failure
-    # volumes:
-    # - /var/run/docker.sock:/var/run/docker.sock
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
@@ -40,8 +40,13 @@ services:
     <<: *app
     container_name: bot
     command: sh -c "python3 -m src.bot.app"
-    # volumes:
-    # - /var/run/docker.sock:/var/run/docker.sock
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7000/healthcheck/', timeout=5).code == 200"
+      interval: 30s
+      timeout: 5s
+      retries: 3
     ports:
       - 7000:8000
 

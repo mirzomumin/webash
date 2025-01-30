@@ -1,12 +1,13 @@
-FROM python:3.13.1-alpine as builder
+# FROM python:3.13.1-alpine as builder
+FROM python:3.13.1-slim-bullseye as builder
 
 WORKDIR /app
 
 # Install system dependencies
-RUN apk add --no-cache \
-    build-base \
-    postgresql-dev \
-    curl
+RUN get-apt add --no-cache \
+    libpq-dev curl \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry
 RUN curl -sSL https://install.python-poetry.org | python3 -
@@ -20,7 +21,8 @@ RUN poetry install --no-root
 COPY . /app
 
 # Final stage: Use a minimal Alpine image
-FROM python:3.13.1-alpine
+# FROM python:3.13.1-alpine
+FROM python:3.13.1-slim-bullseye
 
 WORKDIR /app
 

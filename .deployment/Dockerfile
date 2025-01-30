@@ -3,10 +3,11 @@ FROM python:3.13.1-slim-bullseye as builder
 
 WORKDIR /app
 
-# Install system dependencies
-RUN get-apt add --no-cache \
+RUN apt-get -y update \
+    && apt-get install -y --no-install-recommends \
+    build-essential \
     libpq-dev curl \
-    curl \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry

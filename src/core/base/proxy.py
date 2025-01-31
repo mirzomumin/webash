@@ -33,8 +33,8 @@ class DockerWebSocketProxy:
 
                 logger.info(f"Connected to docker container {self.container.short_id}")
                 await asyncio.gather(
-                    self._write_to_socket(docker_ws),  # Client -> Docker
                     self._read_from_socket(docker_ws),  # Docker -> Client
+                    self._write_to_socket(docker_ws),  # Client -> Docker
                 )
         except ConnectionClosedError:
             logger.error("WebSocket connection closed")

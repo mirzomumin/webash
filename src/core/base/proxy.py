@@ -51,6 +51,8 @@ class DockerWebSocketProxy:
         try:
             logger.info(f"Try writing to docker container: {self.container.short_id}")
             while True:
+                logger.info(f"CONTAINER STATUS: {self.container.status}")
+                self.container.reload()
                 logger.info(
                     f"Started writing to docker container: {self.container.short_id}"
                 )
@@ -69,6 +71,8 @@ class DockerWebSocketProxy:
         try:
             logger.info(f"Try reading from docker container: {self.container.short_id}")
             while True:
+                logger.info(f"CONTAINER STATUS: {self.container.status}")
+                self.container.reload()
                 logger.info(
                     f"Started reading from docker container: {self.container.short_id}"
                 )

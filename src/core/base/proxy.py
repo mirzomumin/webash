@@ -22,7 +22,7 @@ class DockerWebSocketProxy:
         container_id = self.container.id
         docker_ws_url = f"{DOCKER_WS_URL}/containers/{container_id}/attach/ws?stream=1&stdout=1&stdin=1&logs=1&stderr=1"
 
-        logger.info(
+        logger.debug(
             f'Container "{self.container.short_id}" status: {self.container.status}'
         )
 
@@ -31,7 +31,7 @@ class DockerWebSocketProxy:
             async with websockets.connect(docker_ws_url) as docker_ws:
                 # Forward messages bidirectionally
 
-                logger.info(f"Connected to docker container {self.container.short_id}")
+                logger.debug(f"Connected to docker container {self.container.short_id}")
                 await asyncio.gather(
                     self._read_from_socket(docker_ws),  # Docker -> Client
                     self._write_to_socket(docker_ws),  # Client -> Docker
@@ -47,17 +47,17 @@ class DockerWebSocketProxy:
             await self.websocket.close()
 
     async def _write_to_socket(self, docker_ws: ClientConnection):
-        logger.info(f"Start writing to docker container: {self.container.short_id}")
+        logger.debug(f"Start writing to docker container: {self.container.short_id}")
         try:
-            logger.info(f"Try writing to docker container: {self.container.short_id}")
+            logger.debug(f"Try writing to docker container: {self.container.short_id}")
             while True:
-                logger.info(f"CONTAINER STATUS: {self.container.status}")
+                logger.debug(f"CONTAINER STATUS: {self.container.status}")
                 self.container.reload()
-                logger.info(
+                logger.debug(
                     f"Started writing to docker container: {self.container.short_id}"
                 )
                 msg = await self.websocket.receive_text()
-                logger.info(f'Msg: "{msg}" to container "{self.container.short_id}"')
+                logger.debug(f'Msg: "{msg}" to container "{self.container.short_id}"')
                 await docker_ws.send(msg, text=False)
         except (WebSocketDisconnect, ConnectionClosedError):
             logger.error("Writing to docker socket stopped")
@@ -67,17 +67,19 @@ class DockerWebSocketProxy:
             raise
 
     async def _read_from_socket(self, docker_ws: ClientConnection):
-        logger.info(f"Start reading from docker container: {self.container.short_id}")
+        logger.debug(f"Start reading from docker container: {self.container.short_id}")
         try:
-            logger.info(f"Try reading from docker container: {self.container.short_id}")
+            logger.debug(
+                f"Try reading from docker container: {self.container.short_id}"
+            )
             while True:
-                logger.info(f"CONTAINER STATUS: {self.container.status}")
+                logger.debug(f"CONTAINER STATUS: {self.container.status}")
                 self.container.reload()
-                logger.info(
+                logger.debug(
                     f"Started reading from docker container: {self.container.short_id}"
                 )
                 data = await docker_ws.recv()
-                logger.info(
+                logger.debug(
                     f'Data: "{data}" from container "{self.container.short_id}"'
                 )
                 await self.websocket.send_bytes(data)

@@ -3,7 +3,6 @@ from docker import DockerClient
 from docker.models.containers import Container
 from fastapi import WebSocket, WebSocketDisconnect
 from src.config import settings
-from src.core.base.exceptions import ContainerUnavailable
 from src.core.base.ws import manager as ws_manager
 from src.core.base.container import manager as container_manager
 from src.core.base.proxy import DockerWebSocketProxy
@@ -35,9 +34,6 @@ class ConsoleService:
             await proxy.handle_proxy()
 
         except WebSocketDisconnect:
-            ws_manager.disconnect(user_id=user_id)
-
-        except ContainerUnavailable:
             ws_manager.disconnect(user_id=user_id)
 
         except Exception as e:

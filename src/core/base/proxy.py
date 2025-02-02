@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import socket
 import websockets
 from fastapi import WebSocket, WebSocketDisconnect
 from docker.models.containers import Container
@@ -30,6 +31,10 @@ class DockerWebSocketProxy:
             # Connect to the Docker WebSocket
             async with websockets.connect(docker_ws_url) as docker_ws:
                 # Forward messages bidirectionally
+
+                sock = docker_ws.transport.get_extra_info("socket")
+                if sock:
+                    sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
                 logger.debug(f"Connected to docker container {self.container.short_id}")
                 await asyncio.gather(
@@ -78,7 +83,14 @@ class DockerWebSocketProxy:
                 logger.debug(
                     f"Started reading from docker container: {self.container.short_id}"
                 )
-                data = await docker_ws.recv()
+                # data = await docker_ws.recv()
+
+                # Use asyncio timeout to avoid blocking forever
+                try:
+                    data = await asyncio.wait_for(docker_ws.recv(), timeout=1.0)
+                except asyncio.TimeoutError:
+                    logger.debug("No data received, continuing...")
+                    continue
                 logger.debug(
                     f'Data: "{data}" from container "{self.container.short_id}"'
                 )

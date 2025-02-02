@@ -69,7 +69,7 @@ class DockerWebSocketProxy:
                 logger.debug(f'Msg: "{msg}" to container "{self.container.short_id}"')
                 await docker_ws.send(msg, text=False)
                 # Ensure the message is sent immediately
-                await docker_ws.ping()
+                await docker_ws.ping(b"\r\n")
         except (WebSocketDisconnect, ConnectionClosedError):
             logger.error("Writing to docker socket stopped")
             raise
@@ -101,8 +101,7 @@ class DockerWebSocketProxy:
                     f'Data: "{data}" from container "{self.container.short_id}"'
                 )
                 await self.websocket.send_bytes(data)
-                # Ensure the message is sent immediately
-                await self.websocket.ping()
+
         except (WebSocketDisconnect, ConnectionClosedError, ConnectionClosedOK):
             logger.error("Reading from docker socket stopped")
             raise

@@ -1,3 +1,4 @@
+import sys
 from logging.config import dictConfig
 from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +12,8 @@ from src.config import LogConfig
 
 from src.api import router as router_api
 
+
+sys.stdout.flush()
 
 templates = Jinja2Templates(directory="templates")
 

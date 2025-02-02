@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import socket
 import websockets
 from fastapi import WebSocket, WebSocketDisconnect
 from docker.models.containers import Container
@@ -29,12 +28,17 @@ class DockerWebSocketProxy:
 
         try:
             # Connect to the Docker WebSocket
-            async with websockets.connect(docker_ws_url) as docker_ws:
+            async with websockets.connect(
+                docker_ws_url, ping_interval=None
+            ) as docker_ws:
                 # Forward messages bidirectionally
 
-                sock = docker_ws.transport.get_extra_info("socket")
-                if sock:
-                    sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                # sock = docker_ws.transport.get_extra_info("socket")
+                # if sock:
+                #     sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+                # Send a "ping" to trigger an immediate response
+                # await docker_ws.send("\r")
 
                 logger.debug(f"Connected to docker container {self.container.short_id}")
                 await asyncio.gather(
@@ -64,6 +68,8 @@ class DockerWebSocketProxy:
                 msg = await self.websocket.receive_text()
                 logger.debug(f'Msg: "{msg}" to container "{self.container.short_id}"')
                 await docker_ws.send(msg, text=False)
+                # Ensure the message is sent immediately
+                await docker_ws.ping()
         except (WebSocketDisconnect, ConnectionClosedError):
             logger.error("Writing to docker socket stopped")
             raise
@@ -83,18 +89,20 @@ class DockerWebSocketProxy:
                 logger.debug(
                     f"Started reading from docker container: {self.container.short_id}"
                 )
-                # data = await docker_ws.recv()
+                data = await docker_ws.recv()
 
                 # Use asyncio timeout to avoid blocking forever
-                try:
-                    data = await asyncio.wait_for(docker_ws.recv(), timeout=1.0)
-                except asyncio.TimeoutError:
-                    logger.debug("No data received, continuing...")
-                    continue
+                # try:
+                #     data = await asyncio.wait_for(docker_ws.recv(), timeout=1.0)
+                # except asyncio.TimeoutError:
+                #     logger.debug("No data received, continuing...")
+                #     continue
                 logger.debug(
                     f'Data: "{data}" from container "{self.container.short_id}"'
                 )
                 await self.websocket.send_bytes(data)
+                # Ensure the message is sent immediately
+                await self.websocket.ping()
         except (WebSocketDisconnect, ConnectionClosedError, ConnectionClosedOK):
             logger.error("Reading from docker socket stopped")
             raise

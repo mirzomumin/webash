@@ -32,6 +32,7 @@ class DockerWebSocketProxy:
                 docker_ws_url, ping_interval=None
             ) as docker_ws:
                 # Forward messages bidirectionally
+                await docker_ws.send("echo flushing_logs\n")
 
                 # sock = docker_ws.transport.get_extra_info("socket")
                 # if sock:

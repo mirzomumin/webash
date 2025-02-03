@@ -44,11 +44,15 @@ async def command_login_handler(message: Message) -> None:
     try:
         code = await BotService.get_auth_code(user=message.from_user)
     except ObjectAlreadyExists:
-        await message.answer("Eski kodingiz hali ham kuchda ☝️")
+        # msg_uz = "Eski kodingiz hali ham kuchda ☝️"
+        msg_en = "Previous code is still valid ☝️"
+        await message.answer(msg_en)
         return
     except Exception as e:
         logging.error(f"ERROR in get_auth_code: {e}")
-        await message.answer("Birozdan so'ng qayta urinib ko'ring ⏳")
+        # msg_uz = "Birozdan so'ng qayta urinib ko'ring"
+        msg_en = "Please try again later ⏳"
+        await message.answer(msg_en)
         return
 
     await message.answer(f"🔐 Code: {html.code(code)}")
@@ -73,9 +77,13 @@ async def set_bot_commands(bot: Bot):
     """
     Function to set bot commands for `/help` menu and quick access.
     """
+    # start_description_uz = "⬛️ Botni ishga tushiring"
+    # login_description_uz = "Parol kodni oling"
+    start_description_en = "⬛️ Start the bot"
+    login_description_en = "⬛️ Get the passcode"
     commands = [
-        BotCommand(command="start", description="⬛️ Botni ishga tushiring"),
-        BotCommand(command="login", description="⬛️ Parol kodni oling"),
+        BotCommand(command="start", description=start_description_en),
+        BotCommand(command="login", description=login_description_en),
     ]
     await bot.set_my_commands(commands)
 

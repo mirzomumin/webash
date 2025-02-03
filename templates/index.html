@@ -166,10 +166,14 @@
         }
 
         async function getTokens(term) {
-            term.write('Salom!👋  @WeBashBot telegram bot orqali parol kodni oling.');
-            let response = null
+            // let helloMsgUz = 'Salom!👋  @WeBashBot telegram bot orqali parol kodni oling.';
+            let helloMsgEn = 'Hi!👋  Get your passcode via telegram bot @WeBashBot';
+            term.write(helloMsgEn);
+            let response = null;
+            // let passcodeMsgUz = '\r\nParol kodni kiriting (olti xonalik son): ';
+            let passcodeMsgEn = '\r\nEnter passcode (six digit number): ';
             while (true) {
-                term.write('\r\nParol kodni kiriting (olti xonalik son): ');
+                term.write(passcodeMsgEn);
                 let code = await getInputCode(term);
                 if (!code) {
                     continue

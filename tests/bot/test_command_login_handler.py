@@ -62,7 +62,7 @@ async def test_command_login_handler_object_already_exists():
 
     await command_login_handler(mock_message)
 
-    mock_message.answer.assert_called_once_with("Eski kodingiz hali ham kuchda ☝️")
+    mock_message.answer.assert_called_once_with("Previous code is still valid ☝️")
 
 
 @pytest.mark.asyncio
@@ -77,6 +77,4 @@ async def test_command_login_handler_unexpected_error(mock_get_auth_code):
     await command_login_handler(mock_message)
 
     mock_get_auth_code.assert_awaited_once_with(user=mock_message.from_user)
-    mock_message.answer.assert_called_once_with(
-        "Birozdan so'ng qayta urinib ko'ring ⏳"
-    )
+    mock_message.answer.assert_called_once_with("Please try again later ⏳")

@@ -27,6 +27,13 @@ class ContainerManager:
                 "\\[\\e[1;32m\\]\\u@\\h\\[\\e[0m\\]:\\[\\e[1;34m\\]\\w\\[\\e[0m\\]\\$ "
             )
 
+            # Create a Docker volume with a size limit of 50 MB
+            # volume = docker_client.volumes.create(
+            #     name=username,
+            #     driver="local",
+            #     driver_opts={"type": "tmpfs", "device": "tmpfs", "o": "size=50m"}
+            # )
+
             container: Container = docker_client.containers.run(
                 image="alpine:latest",
                 command="sh",
@@ -44,6 +51,12 @@ class ContainerManager:
                     "retries": 0,
                     "start_period": 0,
                 },
+                nano_cpus=100_000_000,  # 0.1 CPU
+                # cpu_period=100_000,  # Required for cpu_quota to work
+                # cpu_quota=10_000,  # 0.1 CPU (10000 microseconds per 100000)
+                mem_limit=20 * 1024 * 1024,  # 10 MB
+                cpuset_cpus="0",
+                # volumes={volume.name: {"bind": home_dir, "mode": "rw"}}
             )
 
             # for further release

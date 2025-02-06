@@ -1,6 +1,7 @@
 import logging
 import pytest
 from asyncpg.exceptions import InvalidCatalogNameError
+from aiogram.types import Message, contact, User as TelegramUser
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 from urllib.parse import urlparse, urlunparse
@@ -9,6 +10,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession
 from httpx import AsyncClient, ASGITransport
+from unittest.mock import AsyncMock, Mock
 
 from src.main import app
 from src.core.database import get_session, get_db
@@ -107,3 +109,28 @@ async def client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
+
+
+@pytest.fixture
+def mock_msg() -> AsyncMock:
+    mock_message = AsyncMock(spec=Message)
+    mock_message.from_user = Mock(spec=TelegramUser)
+    mock_message.from_user.id = 12345
+    mock_message.from_user.is_bot = False
+    mock_message.from_user.first_name = "Anonym"
+    mock_message.from_user.last_name = "Anonymous"
+    mock_message.from_user.username = "anonymous"
+    mock_message.from_user.language_code = "en"
+    mock_message.from_user.is_premium = False
+    mock_message.from_user.added_to_attachment_menu = False
+    mock_message.from_user.can_join_groups = False
+    mock_message.from_user.can_read_all_group_messages = True
+    mock_message.from_user.supports_inline_queries = False
+    mock_message.from_user.can_connect_to_business = False
+    mock_message.from_user.has_main_web_app = False
+
+    mock_message.contact = Mock(spec=contact.Contact)
+    mock_message.contact.phone_number = "+998970010011"
+    mock_message.answer = AsyncMock()
+
+    return mock_message

@@ -12,6 +12,7 @@ async def create_user(
     username: str | None = None,
     first_name: str | None = None,
     last_name: str | None = None,
+    phone_number: str | None = None,
 ) -> User:
     if tid is None:
         tid = get_random_number()
@@ -25,12 +26,16 @@ async def create_user(
     if last_name is None:
         last_name = uuid4().hex[:6].upper()
 
+    if phone_number is None:
+        phone_number = "+998970040404"
+
     async with get_test_db() as db:
         user_data = {
             "tid": tid,
             "first_name": first_name,
             "last_name": last_name,
             "username": username,
+            "phone_number": phone_number,
             "is_bot": False,
             "language_code": "en",
         }

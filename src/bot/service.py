@@ -2,45 +2,60 @@ from datetime import datetime, timedelta, timezone
 from aiogram.types.user import User as TelegramUser  # import telegram User schema
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.base.exceptions import ObjectAlreadyExists
-from src.core.models.user import Code
+from src.core.base.exceptions import ObjectAlreadyExists, UserNotFound
+from src.core.models.user import Code, User
 from src.core.repositories.user import UserRepository, CodeRepository
-from src.api.v1.schemas.user import AddUserSchema
+from src.api.v1.schemas.user import CustomTelegramUser
 from src.core.base.funcs import get_random_number
 from src.core.database import get_db
 
 
 class BotService:
     @classmethod
-    async def get_auth_code(cls, *, user: TelegramUser) -> int:
+    async def get_passcode(
+        cls,
+        *,
+        telegram_user: TelegramUser,
+        phone_number: str | None = None,
+    ) -> Code:
         async with get_db() as db:
             try:
-                user = await cls._get_or_create_user(user=user, db=db)
-                code = await cls._generate_auth_code(user=user, db=db)
+                user = await UserRepository.get(db=db, tid=telegram_user.id)
+                if user is None and phone_number is None:
+                    raise UserNotFound
+
+                if user is None:
+                    user = await cls.create_user(
+                        telegram_user=telegram_user,
+                        phone_number=phone_number,
+                        db=db,
+                    )
+                code = await cls.generate_passcode(user=user, db=db)
                 await db.commit()
             except:
                 await db.rollback()
                 raise
 
             await db.refresh(code)
-        return code.value
+            return code
 
     @classmethod
-    async def _get_or_create_user(
+    async def create_user(
         cls,
         *,
-        user: TelegramUser,
+        telegram_user: TelegramUser,
+        phone_number: str,
         db: AsyncSession,
-    ):
-        user_data = await AddUserSchema.to_db(user)
-        user = await UserRepository.get(db=db, tid=user_data["tid"])
-        if user is None:
-            user = await UserRepository.add(db=db, values=user_data)
-
+    ) -> User:
+        user_data = CustomTelegramUser.to_db(
+            telegram_user=telegram_user,
+            phone_number=phone_number,
+        )
+        user = await UserRepository.add(db=db, values=user_data)
         return user
 
     @classmethod
-    async def _generate_auth_code(cls, user: TelegramUser, db: AsyncSession):
+    async def generate_passcode(cls, user: User, db: AsyncSession) -> Code:
         filters = [
             Code.expiry >= datetime.now(timezone.utc),
             Code.is_used == False,  # noqa E712

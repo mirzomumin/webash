@@ -21,21 +21,21 @@ class AddUserSchema(TelegramUser):
     # has_main_web_app: bool | None
 
     @classmethod
-    async def to_db(cls, data: TelegramUser):
+    async def to_db(cls, telegram_user: TelegramUser):
         return {
-            "tid": data.id,
-            "first_name": data.first_name,
-            "last_name": data.last_name,
-            "username": data.username,
-            "is_bot": data.is_bot,
-            "language_code": data.language_code,
-            "is_premium": data.is_premium,
-            "added_to_attachment_menu": data.added_to_attachment_menu,
-            "can_join_groups": data.can_join_groups,
-            "can_read_all_group_messages": data.can_read_all_group_messages,
-            "supports_inline_queries": data.supports_inline_queries,
-            "can_connect_to_business": data.can_connect_to_business,
-            "has_main_web_app": data.has_main_web_app,
+            "tid": telegram_user.id,
+            "first_name": telegram_user.first_name,
+            "last_name": telegram_user.last_name,
+            "username": telegram_user.username,
+            "is_bot": telegram_user.is_bot,
+            "language_code": telegram_user.language_code,
+            "is_premium": telegram_user.is_premium,
+            "added_to_attachment_menu": telegram_user.added_to_attachment_menu,
+            "can_join_groups": telegram_user.can_join_groups,
+            "can_read_all_group_messages": telegram_user.can_read_all_group_messages,
+            "supports_inline_queries": telegram_user.supports_inline_queries,
+            "can_connect_to_business": telegram_user.can_connect_to_business,
+            "has_main_web_app": telegram_user.has_main_web_app,
         }
 
     class ConfigDict:
@@ -74,3 +74,29 @@ class TokensRsp(BaseModel):
 
 class OtpData(BaseModel):
     otp_code: int = Field(..., ge=100_000, le=999_999)
+
+
+class CustomTelegramUser(TelegramUser):
+    phone_number: str
+
+    @classmethod
+    def to_db(cls, *, telegram_user: TelegramUser, phone_number: str):
+        return {
+            "tid": telegram_user.id,
+            "first_name": telegram_user.first_name,
+            "last_name": telegram_user.last_name,
+            "username": telegram_user.username,
+            "phone_number": phone_number,
+            "is_bot": telegram_user.is_bot,
+            "language_code": telegram_user.language_code,
+            "is_premium": telegram_user.is_premium,
+            "added_to_attachment_menu": telegram_user.added_to_attachment_menu,
+            "can_join_groups": telegram_user.can_join_groups,
+            "can_read_all_group_messages": telegram_user.can_read_all_group_messages,
+            "supports_inline_queries": telegram_user.supports_inline_queries,
+            "can_connect_to_business": telegram_user.can_connect_to_business,
+            "has_main_web_app": telegram_user.has_main_web_app,
+        }
+
+    class ConfigDict:
+        from_attributes = True

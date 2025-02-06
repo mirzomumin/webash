@@ -71,3 +71,13 @@ class ContainerUnavailable(HTTPException, ContainerError):
         headers: Dict[str, str] | None = None,
     ) -> None:
         super().__init__(status_code, detail, headers)
+
+
+class UserNotFound(HTTPException):
+    def __init__(
+        self,
+        status_code: int = status.HTTP_404_NOT_FOUND,
+        detail: Any = "User does not exist.",
+        headers: Dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(status_code, detail, headers)

@@ -6,12 +6,18 @@ from aiogram import Bot, Dispatcher, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
-from aiogram.types import Message, BotCommand
+from aiogram.types import (
+    Message,
+    BotCommand,
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+)
 
 from src.bot.command import CommandLogin
 from src.bot.service import BotService
 from src.config import settings
-from src.core.base.exceptions import ObjectAlreadyExists
+from src.core.base.exceptions import ObjectAlreadyExists, UserNotFound
+from src.core.models.user import Code
 
 
 # Bot token can be obtained via https://t.me/BotFather
@@ -20,6 +26,15 @@ TOKEN = settings.BOT_TOKEN
 # All handlers should be attached to the Router (or Dispatcher)
 
 dp = Dispatcher()
+
+
+# Create a keyboard with a button to request contact
+contact_button = KeyboardButton(text="📞 Share your contact", request_contact=True)
+contact_keyboard = ReplyKeyboardMarkup(
+    keyboard=[[contact_button]],
+    resize_keyboard=True,
+    one_time_keyboard=True,
+)
 
 
 @dp.message(CommandStart())
@@ -32,7 +47,11 @@ async def command_start_handler(message: Message) -> None:
     # and the target chat will be passed to :ref:`aiogram.methods.send_message.SendMessage`
     # method automatically or call API method directly via
     # Bot instance: `bot.send_message(chat_id=message.chat.id, ...)`
-    await message.answer(f"Hello, {html.bold(message.from_user.full_name)}!")
+    text = f"Hello, {html.bold(message.from_user.full_name)}! \
+        \n\rWelcome to @webash's official bot \
+        \n\n\rPlease share your contact (by clicking button)"
+
+    await message.answer(text, reply_markup=contact_keyboard)
 
 
 @dp.message(CommandLogin())
@@ -42,35 +61,44 @@ async def command_login_handler(message: Message) -> None:
     Send auth code in return.
     """
     try:
-        code = await BotService.get_auth_code(user=message.from_user)
+        code: Code = await BotService.get_passcode(telegram_user=message.from_user)
+
     except ObjectAlreadyExists:
         # msg_uz = "Eski kodingiz hali ham kuchda ☝️"
-        msg_en = "Previous code is still valid ☝️"
+        msg_en = "Previous passcode is still valid ☝️"
         await message.answer(msg_en)
         return
+
+    except UserNotFound:
+        text = "Please share your contact📞 (by clicking button)"
+        await message.answer(text, reply_markup=contact_keyboard)
+        return
+
     except Exception as e:
-        logging.error(f"ERROR in get_auth_code: {e}")
+        logging.error(f"ERROR in login: {e}")
         # msg_uz = "Birozdan so'ng qayta urinib ko'ring"
         msg_en = "Please try again later ⏳"
         await message.answer(msg_en)
         return
+    await message.answer(f"🔐 Code: {html.code(code.value)}")
 
-    await message.answer(f"🔐 Code: {html.code(code)}")
 
-
-@dp.message()
-async def echo_handler(message: Message) -> None:
-    """
-    Handler will forward receive a message back to the sender
-
-    By default, message handler will handle all message types (like a text, photo, sticker etc.)
-    """
+@dp.message(lambda msg: msg.contact)
+async def command_contact_handler(message: Message):
+    phone_number = message.contact.phone_number
     try:
-        # Send a copy of the received message
-        await message.send_copy(chat_id=message.chat.id)
-    except TypeError:
-        # But not all the types is supported to be copied so need to handle it
-        await message.answer("Nice try!")
+        code: Code = await BotService.get_passcode(
+            telegram_user=message.from_user,
+            phone_number=phone_number,
+        )
+    except ObjectAlreadyExists:
+        # msg_uz = "Eski kodingiz hali ham kuchda ☝️"
+        msg_en = "Previous passcode is still valid ☝️"
+        await message.answer(msg_en)
+        return
+
+    await message.answer(f"🔐 Code: {html.code(code.value)}")
+    await message.answer("🔑 To get a new passcode click /login")
 
 
 async def set_bot_commands(bot: Bot):

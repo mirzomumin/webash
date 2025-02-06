@@ -1,7 +1,13 @@
 import pytest
 from unittest.mock import AsyncMock, Mock
 
-from aiogram.types import Message, User
+from aiogram import html
+from aiogram.types import (
+    Message,
+    User,
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+)
 from src.bot.app import command_start_handler
 
 
@@ -14,4 +20,14 @@ async def test_command_start_handler():
 
     await command_start_handler(mock_message)
 
-    mock_message.answer.assert_called_once_with("Hello, <b>Test User</b>!")
+    contact_button = KeyboardButton(text="📞 Share your contact", request_contact=True)
+    contact_keyboard = ReplyKeyboardMarkup(
+        keyboard=[[contact_button]],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
+
+    text = f"Hello, {html.bold(mock_message.from_user.full_name)}! \
+        \n\rWelcome to @webash's official bot \
+        \n\n\rPlease share your contact (by clicking button)"
+    mock_message.answer.assert_called_once_with(text, reply_markup=contact_keyboard)

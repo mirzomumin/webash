@@ -166,8 +166,11 @@
         }
 
         async function getTokens(term) {
+            const bot_link = '\x1b[34;1m\x1b]8;;https://t.me/WeBashBot\x1b\\@WeBashBot\x1b]8;;\x1b\\\x1b[0m'
             // let helloMsgUz = 'Salom!👋  @WeBashBot telegram bot orqali parol kodni oling.';
-            let helloMsgEn = 'Hi!👋  Get your passcode via telegram bot @WeBashBot';
+            let helloMsgEn = `Hi!👋  Go to telegram bot ${bot_link} and get your passcode`
+
+            // Выводим в терминал с цветом
             term.write(helloMsgEn);
             let response = null;
             // let passcodeMsgUz = '\r\nParol kodni kiriting (olti xonalik son): ';

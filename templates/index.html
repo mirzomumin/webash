@@ -93,25 +93,36 @@
             return new Promise((resolve) => {
                 let codeBuffer = "";
 
+                // Handle regular key input
                 const onDataHandler = term.onData((data) => {
                     if (data === '\r') { // Enter key
-                        onDataHandler.dispose(); // Отменяем обработчик
+                        onDataHandler.dispose(); // Stop listening
                         if (/^\d{6}$/.test(codeBuffer)) {
-                            resolve(codeBuffer.trim()); // Возвращаем введенный код
+                            resolve(codeBuffer.trim()); // Return the entered code
                         } else {
                             resolve(null);
                         }
                     } else if (data === '\u007F') { // Backspace key
                         if (codeBuffer.length > 0) {
                             codeBuffer = codeBuffer.slice(0, -1); // Remove last character
-                            term.write("\b \b"); // Handle backspace in the terminal
-                        } else {
-                            term.write(''); // Prevent deletion when buffer is empty
+                            term.write('\b \b'); // Handle backspace in the terminal
                         }
                     } else if (/^\d$/.test(data) && codeBuffer.length < 6) {
                         codeBuffer += data;
                         term.write(data);
                     }
+                });
+
+                // Handle Ctrl+V (paste)
+                term.textarea.addEventListener('paste', (event) => {
+                    event.preventDefault(); // Prevent default paste behavior
+                    const pastedText = (event.clipboardData || window.clipboardData).getData('text');
+                    const validDigits = pastedText.replace(/\D/g, ''); // Keep only digits
+                    const remainingSpace = 6 - codeBuffer.length;
+                    const digitsToAdd = validDigits.slice(0, remainingSpace);
+
+                    codeBuffer += digitsToAdd;
+                    term.write(digitsToAdd); // Write the pasted digits to the terminal
                 });
             });
         }

@@ -15,6 +15,9 @@ class Settings:
     DOCKER_API_URL: str = os.environ["DOCKER_API_URL"]
     DOCKER_WS_URL: str = os.environ["DOCKER_WS_URL"]
     TEST_DB_URL: str = os.environ["TEST_DB_URL"]
+    DOCS_URL: str | None = os.environ.get("DOCS_URL", None)
+    OPENAPI_URL: str | None = os.environ.get("OPENAPI_URL", None)
+    REDOC_URL: str | None = os.environ.get("REDOC_URL", None)
 
 
 class LogConfig(BaseModel):

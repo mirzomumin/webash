@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from src.core.database import get_session
-from src.config import LogConfig
+from src.config import LogConfig, settings
 
 from src.api import router as router_api
 
@@ -16,7 +16,11 @@ templates = Jinja2Templates(directory="templates")
 
 
 dictConfig(LogConfig().model_dump())
-app = FastAPI()
+app = FastAPI(
+    openapi_url=settings.OPENAPI_URL,
+    docs_url=settings.DOCS_URL,
+    redoc_url=settings.REDOC_URL,
+)
 
 
 # Add CORS middleware

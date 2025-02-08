@@ -1,3 +1,4 @@
+import logging
 import jwt
 
 from uuid import UUID
@@ -16,6 +17,9 @@ from src.core.base.dependencies import get_token
 from src.core.base.token import JWTToken
 
 
+logger = logging.getLogger("webashapp")
+
+
 class JWTAuthentication(HTTPBearer):
     async def __call__(
         self,
@@ -28,10 +32,14 @@ class JWTAuthentication(HTTPBearer):
             user_id: UUID = payload.get("user_id")
             if user_id is None:
                 raise TokenInvalid
-        except jwt.ExpiredSignatureError:
+        except jwt.ExpiredSignatureError as e:
+            logger.exception(f"AUTH EXCEPTION: {e}")
             raise TokenExpired
-        except jwt.PyJWTError:
+        except jwt.PyJWTError as e:
+            logger.exception(f"AUTH EXCEPTION: {e}")
             raise TokenInvalid
+        except Exception as e:
+            logger.exception(f"AUTH EXCEPTION: {e}")
 
         users = await UserRepository.list(db=session, filters=[User.id == user_id])
         return users[0]

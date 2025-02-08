@@ -4,6 +4,7 @@ from sqlalchemy import String, ForeignKey, DateTime, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.base.models import Base
+from src.core.base.types import DigitsOnlyInteger
 
 
 class User(Base):
@@ -15,7 +16,7 @@ class User(Base):
     username: Mapped[str | None] = mapped_column(
         String(200), unique=True, nullable=True
     )
-    phone_number: Mapped[str] = mapped_column(String(20))
+    phone_number: Mapped[int] = mapped_column(DigitsOnlyInteger)
     is_bot: Mapped[bool]
     language_code: Mapped[str] = mapped_column(String(2))
     is_premium: Mapped[bool | None]

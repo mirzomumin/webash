@@ -1,11 +1,9 @@
 services:
   app: &app
     image: ${DCKR_REGISTRY}/${DCKR_REPOSITORY}:${IMG_TAG}
-    container_name: app
-    command: sh -c "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000 --log-level debug"
-    restart: on-failure
+    command: sh -c "alembic upgrade head && fastapi run ./src/main.py"
     volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
@@ -29,6 +27,16 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: stop-first
+        failure_action: rollback
+        monitor: 60s
+      restart_policy:
+        condition: on-failure
     depends_on:
       - postgres
     ports:
@@ -38,7 +46,6 @@ services:
 
   bot:
     <<: *app
-    container_name: bot
     command: sh -c "python3 -m src.bot.app"
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock
@@ -47,11 +54,20 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: stop-first
+        failure_action: rollback
+        monitor: 60s
+      restart_policy:
+        condition: on-failure
     ports:
       - 7000:8000
 
   postgres:
-    container_name: postgres
     image: postgres:15-alpine
     environment:
       - POSTGRES_DB=${DB_NAME}
@@ -62,6 +78,16 @@ services:
       interval: 30s
       timeout: 60s
       retries: 5
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: stop-first
+        failure_action: rollback
+        monitor: 60s
+      restart_policy:
+        condition: on-failure
     ports:
       - 5432:5432
     volumes:
@@ -72,7 +98,7 @@ services:
 
 networks:
   webash_net:
-    driver: bridge
+    driver: overlay
 
 volumes:
   pg_data: {}

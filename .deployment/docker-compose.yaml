@@ -48,9 +48,9 @@ services:
     <<: *app
     command: sh -c "python3 -m src.bot.app"
     volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
-      test: ["CMD-SHELL", "getent hosts $(hostname) || exit 1"]
+      test: ["CMD-SHELL", "getent hosts $$(hostname) || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3

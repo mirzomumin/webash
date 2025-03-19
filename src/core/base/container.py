@@ -36,7 +36,7 @@ class ContainerManager:
 
             container: Container = docker_client.containers.run(
                 image="debian:12.1",
-                command="sh",
+                command="/bin/bash",
                 stdin_open=True,
                 tty=True,
                 detach=True,

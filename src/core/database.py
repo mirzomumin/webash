@@ -8,7 +8,13 @@ from sqlalchemy.ext.asyncio import (
 from src.config import settings
 
 
-async_engine = create_async_engine(settings.DB_URL)
+async_engine = create_async_engine(
+    settings.DB_URL,
+    pool_size=10,
+    max_overflow=20,
+    pool_recycle=300,
+    pool_pre_ping=True,
+)
 SessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=async_engine)
 
 

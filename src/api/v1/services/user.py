@@ -38,6 +38,7 @@ class UserService:
             raise ObjectAlreadyExists
         await session.commit()
         await session.refresh(new_user)
+        await session.close()
         return new_user
 
 
@@ -58,6 +59,7 @@ class AuthService:
         # Get tokens
         payload = {"sub": username, "user_id": str(user_id)}
         tokens = JWTToken.tokens(payload=payload)
+        await session.close()
         return {"tokens": tokens}
 
     @classmethod
@@ -97,4 +99,5 @@ class AuthService:
             raise CodeInvalidOrExpired
 
         code = codes[0]
+        await session.close()
         return code.user

@@ -33,19 +33,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up python3.13
+      - name: Set up python3.14
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.14'
 
       - name: Install dependancy manager
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          export PATH="/home/runner/.local/bin"
-          poetry config virtualenvs.create false
+          curl -LsSf https://astral.sh/uv/install.sh | sh
 
       - name: Install dependencies with poetry
-        run: poetry install --no-root
+        run: uv sync --group dev
 
       - name: Run code tests
         env:
@@ -67,7 +65,7 @@ jobs:
         run: pytest -s
 
       - name: Install ruff linter
-        run: poetry add ruff
+        run: uv add ruff
 
       - name: Run linters
         run: ruff check .

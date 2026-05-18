@@ -41,6 +41,7 @@ jobs:
       - name: Install dependancy manager
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
+          uv venv
 
       - name: Install dependencies with poetry
         run: uv sync --group dev

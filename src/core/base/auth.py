@@ -14,7 +14,7 @@ from src.core.base.exceptions import (
 from src.core.repositories.user import UserRepository
 from src.core.models.user import User
 from src.core.base.dependencies import get_token
-from src.core.base.token import JWTToken
+from src.core.base.token import ACCESS_TOKEN, JWTToken
 
 
 logger = logging.getLogger("webashapp")
@@ -28,7 +28,7 @@ class JWTAuthentication(HTTPBearer):
         session: AsyncSession = Depends(get_session),
     ) -> User:
         try:
-            payload = JWTToken.decode_jwt(token=token)
+            payload = JWTToken.decode_jwt(token=token, token_type=ACCESS_TOKEN)
             user_id: UUID = payload.get("user_id")
             if user_id is None:
                 raise TokenInvalid

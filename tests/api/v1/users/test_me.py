@@ -1,6 +1,6 @@
 import pytest
 from tests.utils import create_user
-from src.core.base.token import JWTToken
+from src.core.base.token import ACCESS_TOKEN, JWTToken
 
 
 @pytest.mark.asyncio(loop_scope="session")
@@ -49,7 +49,7 @@ async def test_me_fail_invalid_token(client):
 async def test_me_fail_expired_token(client):
     user = await create_user()
     payload = {"sub": user.username, "user_id": str(user.id)}
-    access_token = JWTToken.encode_jwt(payload=payload, ttl=-1)
+    access_token = JWTToken.encode_jwt(payload=payload, ttl=-1, token_type=ACCESS_TOKEN)
 
     # send request to update tokens
     response = await client.get(
@@ -62,4 +62,21 @@ async def test_me_fail_expired_token(client):
     ######### assert response ##########
     assert response.status_code == 401
     assert response_data["detail"] == "Token Expired"
+    ####################################
+
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_me_fail_refresh_token(client):
+    user = await create_user()
+    payload = {"sub": user.username, "user_id": str(user.id)}
+    tokens = JWTToken.tokens(payload=payload)
+
+    response = await client.get(
+        "/api/v1/user/me",
+        headers={"Authorization": f"Bearer {tokens['refresh']}"},
+    )
+
+    ######### assert response ##########
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Token Invalid"
     ####################################

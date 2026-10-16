@@ -1,4 +1,5 @@
 import logging
+import re
 from uuid import UUID
 from docker import DockerClient, errors
 from docker.models.containers import Container
@@ -6,6 +7,15 @@ from src.core.models.user import User
 
 
 logger = logging.getLogger("webashapp")
+
+
+def get_linux_username(user: User) -> str:
+    for name in (user.username, user.first_name, user.last_name):
+        username = re.sub(r"[^a-z0-9_]", "", (name or "").lower())
+        username = username.lstrip("0123456789_")[:32]
+        if username:
+            return username
+    return "user"
 
 
 class ContainerManager:
@@ -21,7 +31,7 @@ class ContainerManager:
         """Create and run a Docker container."""
 
         try:
-            username = user.username or user.first_name or user.last_name
+            username = get_linux_username(user)
             home_dir = f"/home/{username}"
             colored_ps1 = (
                 "\\[\\e[1;32m\\]\\u@\\h\\[\\e[0m\\]:\\[\\e[1;34m\\]\\w\\[\\e[0m\\]\\$ "
@@ -36,13 +46,18 @@ class ContainerManager:
 
             container: Container = docker_client.containers.run(
                 image="alpine:latest",
-                command="sh",
                 stdin_open=True,
                 tty=True,
                 detach=True,
                 environment={"PS1": colored_ps1},
                 hostname="webash",
-                entrypoint=f"sh -c 'adduser -D {username} && su {username} -c sh'",
+                entrypoint=[
+                    "sh",
+                    "-c",
+                    'adduser -D "$1" && su "$1" -c sh',
+                    "sh",
+                    username,
+                ],
                 working_dir=home_dir,
                 healthcheck={
                     "test": ["CMD-SHELL", "getent hosts $(hostname) || exit 1"],

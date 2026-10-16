@@ -20,7 +20,7 @@ from src.core.base.exceptions import (
 )
 from src.core.repositories.user import UserRepository, CodeRepository
 from src.core.models.user import User, Code
-from src.core.base.token import JWTToken
+from src.core.base.token import REFRESH_TOKEN, JWTToken
 
 
 class UserService:
@@ -65,27 +65,34 @@ class AuthService:
         cls,
         *,
         refresh_token: RefreshToken = Body(...),
+        session: AsyncSession = Depends(get_session),
     ) -> dict:
         try:
             # Decode the refresh token
             payload = JWTToken.decode_jwt(
                 token=refresh_token.refresh,
+                token_type=REFRESH_TOKEN,
             )
-
-            if payload.get("user_id") is None:
-                raise TokenInvalid
+            user_id = UUID(payload["user_id"])
 
         except jwt.ExpiredSignatureError:
             raise TokenExpired
-        except jwt.PyJWTError:
+        except (jwt.PyJWTError, KeyError, TypeError, ValueError):
             raise TokenInvalid
 
+        users = await UserRepository.list(db=session, filters=[User.id == user_id])
+        if not users:
+            raise TokenInvalid
+        user = users[0]
+
         # Get tokens
+        payload = {"sub": user.username, "user_id": str(user.id)}
         tokens = JWTToken.tokens(payload=payload)
         return {"tokens": tokens}
 
     @classmethod
     async def _verify_auth_code(cls, *, otp_code: int, session: AsyncSession) -> User:
+        """Consume an active code and return its owner. A code works only once."""
         filters = [
             Code.value == otp_code,
             Code.expiry >= datetime.now(timezone.utc),
@@ -96,5 +103,15 @@ class AuthService:
         if len(codes) == 0:
             raise CodeInvalidOrExpired
 
-        code = codes[0]
-        return code.user
+        user = codes[0].user
+        for code in codes:
+            code.is_used = True
+        await session.commit()
+
+        # Active codes are generated unique, so a duplicate means a race between
+        # two generations. Its owner is ambiguous: burn every copy instead.
+        if len(codes) > 1:
+            raise CodeInvalidOrExpired
+
+        await session.refresh(user)
+        return user
